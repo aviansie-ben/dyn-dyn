@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "dyn-dyn",
+    "dyn-dyn-macros"
+]
+
