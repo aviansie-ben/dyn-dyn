@@ -25,9 +25,9 @@ pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
         return input.to_token_stream();
     }
 
-    let mod_ident = format_ident!("__dyn_dyn_{}", ident);
+    let marker_ident = format_ident!("__dyn_dyn_{}_Marker", ident);
 
-    input.supertraits.push(syn::parse2(quote!(#dyn_dyn::internal::DynDynBase<#mod_ident::__Marker #type_generics>)).unwrap());
+    input.supertraits.push(syn::parse2(quote!(#dyn_dyn::internal::DynDynBase<#marker_ident #type_generics>)).unwrap());
 
     let marker_contents = input.generics.params.iter().filter_map(|p| {
         match *p {
@@ -40,15 +40,11 @@ pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
     let tokens = quote! {
         #input
 
-        #[allow(non_snake_case)]
-        mod #mod_ident {
-            use super::*;
-
-            pub struct __Marker #generics(#marker_contents) #where_clause;
-        }
+        #[allow(non_camel_case_types)]
+        pub struct #marker_ident #generics(#marker_contents) #where_clause;
 
         impl #impl_generics #dyn_dyn::internal::DynDynImpl<dyn #ident #type_generics> for dyn #ident #type_generics #where_clause {
-            type BaseMarker = #mod_ident::__Marker #type_generics;
+            type BaseMarker = #marker_ident #type_generics;
 
             const IS_SEND: bool = false;
             const IS_SYNC: bool = false;

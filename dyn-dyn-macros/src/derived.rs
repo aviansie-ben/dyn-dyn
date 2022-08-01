@@ -34,7 +34,7 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
         return input.to_token_stream();
     }
 
-    let mod_ident = format_ident!("__dyn_dyn_{}", self_ty.span().start().line);
+    let table_ident = format_ident!("__dyn_dyn_{}_DynTable", self_ty.span().start().line);
     let num_table_entries = args.len();
 
     let turbo_tok = if input.generics.params.is_empty() {
@@ -59,36 +59,33 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
     let tokens = quote! {
         #input
 
-        mod #mod_ident {
-            use super::*;
+        #[allow(non_camel_case_types)]
+        pub struct #table_ident #generics(#marker_contents) #where_clause;
 
-            pub struct __DynDynTable #generics(#marker_contents) #where_clause;
+        impl #impl_generics #table_ident #type_generics #where_clause {
+            #(
+                const fn #convert_fns_0(p: *const #self_ty) -> *const dyn #convert_tys_0 {
+                    p as *const dyn #convert_tys_0
+                }
+            )*
 
-            impl #impl_generics __DynDynTable #type_generics #where_clause {
+            pub const __TABLE: [#dyn_dyn::DynDynTableEntry; #num_table_entries] = unsafe { [
                 #(
-                    const fn #convert_fns_0(p: *const #self_ty) -> *const dyn #convert_tys_0 {
-                        p as *const dyn #convert_tys_0
-                    }
-                )*
-
-                pub const __TABLE: [#dyn_dyn::DynDynTableEntry; #num_table_entries] = unsafe { [
-                    #(
-                        #dyn_dyn::DynDynTableEntry::new::<
-                            #self_ty,
-                            dyn #convert_tys_1,
-                            dyn #convert_tys_1 + Send,
-                            dyn #convert_tys_1 + Sync,
-                            dyn #convert_tys_1 + Send + Sync,
-                            _
-                        >(Self::#convert_fns_1)
-                    ),*
-                ] };
-            }
+                    #dyn_dyn::DynDynTableEntry::new::<
+                        #self_ty,
+                        dyn #convert_tys_1,
+                        dyn #convert_tys_1 + Send,
+                        dyn #convert_tys_1 + Sync,
+                        dyn #convert_tys_1 + Send + Sync,
+                        _
+                    >(Self::#convert_fns_1)
+                ),*
+            ] };
         }
 
         unsafe impl #impl_generics #dyn_dyn::internal::DynDynBase<<dyn #trait_ as #dyn_dyn::internal::DynDynImpl<dyn #trait_>>::BaseMarker> for #self_ty #where_clause {
             fn get_dyn_dyn_table(&self) -> #dyn_dyn::DynDynTable {
-                #dyn_dyn::DynDynTable::new(&#mod_ident::__DynDynTable #turbo_tok #type_generics::__TABLE[..])
+                #dyn_dyn::DynDynTable::new(&#table_ident #turbo_tok #type_generics::__TABLE[..])
             }
         }
     };
