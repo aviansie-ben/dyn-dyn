@@ -61,7 +61,7 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
 
         #[allow(non_camel_case_types)]
         #[doc(hidden)]
-        pub struct #table_ident #generics(#marker_contents) #where_clause;
+        struct #table_ident #generics(#marker_contents) #where_clause;
 
         impl #impl_generics #table_ident #type_generics #where_clause {
             #(

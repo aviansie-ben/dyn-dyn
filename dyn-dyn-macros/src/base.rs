@@ -8,6 +8,7 @@ use crate::util;
 
 pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
     let dyn_dyn = util::dyn_dyn_crate();
+    let vis = input.vis.clone();
     let ident = input.ident.clone();
     let generics = input.generics.clone();
     let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
@@ -42,7 +43,7 @@ pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
 
         #[allow(non_camel_case_types)]
         #[doc(hidden)]
-        pub struct #marker_ident #generics(#marker_contents) #where_clause;
+        #vis struct #marker_ident #generics(#marker_contents) #where_clause;
 
         impl #impl_generics #dyn_dyn::internal::DynDynImpl<dyn #ident #type_generics> for dyn #ident #type_generics #where_clause {
             type BaseMarker = #marker_ident #type_generics;
