@@ -41,6 +41,7 @@ pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
         #input
 
         #[allow(non_camel_case_types)]
+        #[doc(hidden)]
         pub struct #marker_ident #generics(#marker_contents) #where_clause;
 
         impl #impl_generics #dyn_dyn::internal::DynDynImpl<dyn #ident #type_generics> for dyn #ident #type_generics #where_clause {
