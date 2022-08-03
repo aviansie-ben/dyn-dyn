@@ -52,6 +52,27 @@ pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
 
             fn get_dyn_dyn_table(&self) -> #dyn_dyn::DynDynTable { <Self as #base_trait_ident #type_generics>::__dyn_dyn_get_table(self) }
         }
+
+        impl #impl_generics #dyn_dyn::internal::DynDynImpl<dyn #ident #type_generics> for dyn #ident #type_generics + Send #where_clause {
+            const IS_SEND: bool = true;
+            const IS_SYNC: bool = false;
+
+            fn get_dyn_dyn_table(&self) -> #dyn_dyn::DynDynTable { <Self as #base_trait_ident #type_generics>::__dyn_dyn_get_table(self) }
+        }
+
+        impl #impl_generics #dyn_dyn::internal::DynDynImpl<dyn #ident #type_generics> for dyn #ident #type_generics + Sync #where_clause {
+            const IS_SEND: bool = false;
+            const IS_SYNC: bool = true;
+
+            fn get_dyn_dyn_table(&self) -> #dyn_dyn::DynDynTable { <Self as #base_trait_ident #type_generics>::__dyn_dyn_get_table(self) }
+        }
+
+        impl #impl_generics #dyn_dyn::internal::DynDynImpl<dyn #ident #type_generics> for dyn #ident #type_generics + Send + Sync #where_clause {
+            const IS_SEND: bool = true;
+            const IS_SYNC: bool = true;
+
+            fn get_dyn_dyn_table(&self) -> #dyn_dyn::DynDynTable { <Self as #base_trait_ident #type_generics>::__dyn_dyn_get_table(self) }
+        }
     };
 
     tokens
