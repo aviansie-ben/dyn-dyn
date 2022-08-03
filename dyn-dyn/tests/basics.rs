@@ -83,3 +83,16 @@ fn test_external_trait() {
 
     assert_eq!(Some("TestStruct(\"abc\")".to_owned()), (&TestStruct("abc") as &dyn Base).try_downcast::<dyn fmt::Debug>().map(|f| format!("{:?}", f)));
 }
+
+#[test]
+fn test_external_type() {
+    #[dyn_dyn_base]
+    trait Base {}
+    trait TestTrait {}
+
+    #[dyn_dyn_derived(TestTrait)]
+    impl Base for u32 {}
+    impl TestTrait for u32 {}
+
+    assert!((&0_u32 as &dyn Base).try_downcast::<dyn TestTrait>().is_some());
+}
