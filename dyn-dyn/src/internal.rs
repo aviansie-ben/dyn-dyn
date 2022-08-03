@@ -1,6 +1,6 @@
-use crate::DynDynTable;
+use crate::{DynDyn, DynDynTable};
 
-pub unsafe trait DynDynDerived<B: ?Sized> {
+pub unsafe trait DynDynDerived<B: ?Sized + DynDyn<B>> {
     fn get_dyn_dyn_table(&self) -> DynDynTable;
 }
 
