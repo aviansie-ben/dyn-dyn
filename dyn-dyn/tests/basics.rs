@@ -110,3 +110,38 @@ fn test_external_type() {
         .try_downcast::<dyn TestTrait>()
         .is_some());
 }
+
+#[test]
+fn test_multi_base() {
+    #[dyn_dyn_base]
+    trait BaseA {}
+    trait TraitA {}
+
+    #[dyn_dyn_base]
+    trait BaseB {}
+    trait TraitB {}
+
+    struct TestStruct;
+
+    #[dyn_dyn_derived(TraitA)]
+    impl BaseA for TestStruct {}
+    impl TraitA for TestStruct {}
+
+    #[dyn_dyn_derived(TraitB)]
+    impl BaseB for TestStruct {}
+    impl TraitB for TestStruct {}
+
+    assert!((&TestStruct as &dyn BaseA)
+        .try_downcast::<dyn TraitA>()
+        .is_some());
+    assert!((&TestStruct as &dyn BaseA)
+        .try_downcast::<dyn TraitB>()
+        .is_none());
+
+    assert!((&TestStruct as &dyn BaseB)
+        .try_downcast::<dyn TraitA>()
+        .is_none());
+    assert!((&TestStruct as &dyn BaseB)
+        .try_downcast::<dyn TraitB>()
+        .is_some());
+}
