@@ -82,12 +82,12 @@ impl DynDynTable {
 }
 
 mod sealed {
-    pub trait Sealed<B: ?Sized> {}
+    pub trait Sealed {}
 
-    impl<B: ?Sized, T: crate::internal::DynDynImpl<B> + ?Sized> Sealed<B> for T {}
+    impl<T: crate::internal::DynDynImpl + ?Sized> Sealed for T {}
 }
 
-pub trait DynDyn<B: ?Sized>: sealed::Sealed<B> {
+pub trait DynDyn: sealed::Sealed {
     #[must_use]
     fn try_downcast<D: DynTrait + ?Sized>(&self) -> Option<&D>;
 
@@ -95,7 +95,7 @@ pub trait DynDyn<B: ?Sized>: sealed::Sealed<B> {
     fn try_downcast_mut<D: DynTrait + ?Sized>(&mut self) -> Option<&mut D>;
 }
 
-impl<B: ?Sized, T: DynDynImpl<B> + ?Sized> DynDyn<B> for T {
+impl<T: DynDynImpl + ?Sized> DynDyn for T {
     fn try_downcast<D: DynTrait + ?Sized>(&self) -> Option<&D> {
         unsafe {
             self.get_dyn_dyn_table().find_dyn(NonNull::from(self).cast(), Self::IS_SEND, Self::IS_SYNC).map(|ptr| &*ptr.as_ptr())
