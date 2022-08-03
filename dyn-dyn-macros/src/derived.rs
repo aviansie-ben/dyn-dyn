@@ -84,7 +84,7 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
             ] };
         }
 
-        unsafe impl #impl_generics #dyn_dyn::internal::DynDynBase<<dyn #trait_ as #dyn_dyn::internal::DynDynImpl<dyn #trait_>>::BaseMarker> for #self_ty #where_clause {
+        unsafe impl #impl_generics #dyn_dyn::internal::DynDynDerived<dyn #trait_> for #self_ty #where_clause {
             fn get_dyn_dyn_table(&self) -> #dyn_dyn::DynDynTable {
                 #dyn_dyn::DynDynTable::new(&#table_ident #turbo_tok #type_generics::__TABLE[..])
             }

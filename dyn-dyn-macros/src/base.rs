@@ -26,32 +26,31 @@ pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
         return input.to_token_stream();
     }
 
-    let marker_ident = format_ident!("__dyn_dyn_{}_Marker", ident);
+    let base_trait_ident = format_ident!("__dyn_dyn_{}_Base", ident);
+    let mut base_trait_impl_generics = generics.clone();
 
-    input.supertraits.push(syn::parse2(quote!(#dyn_dyn::internal::DynDynBase<#marker_ident #type_generics>)).unwrap());
+    base_trait_impl_generics.params.push(syn::parse2(quote!(__dyn_dyn_T: ?Sized + #dyn_dyn::internal::DynDynDerived<dyn #ident #type_generics>)).unwrap());
 
-    let marker_contents = input.generics.params.iter().filter_map(|p| {
-        match *p {
-            GenericParam::Type(ref p) => Some(p.ident.clone()),
-            _ => None
-        }
-    });
-    let marker_contents = quote!(#(#marker_contents),*);
+    input.supertraits.push(syn::parse2(quote!(#base_trait_ident #type_generics)).unwrap());
 
     let tokens = quote! {
         #input
 
         #[allow(non_camel_case_types)]
         #[doc(hidden)]
-        #vis struct #marker_ident #generics(#marker_contents) #where_clause;
+        #vis unsafe trait #base_trait_ident #generics #where_clause {
+            fn __dyn_dyn_get_table(&self) -> #dyn_dyn::DynDynTable;
+        }
+
+        unsafe impl #base_trait_impl_generics #base_trait_ident #type_generics for __dyn_dyn_T #where_clause {
+            fn __dyn_dyn_get_table(&self) -> #dyn_dyn::DynDynTable { <Self as #dyn_dyn::internal::DynDynDerived<dyn #ident #type_generics>>::get_dyn_dyn_table(self) }
+        }
 
         impl #impl_generics #dyn_dyn::internal::DynDynImpl<dyn #ident #type_generics> for dyn #ident #type_generics #where_clause {
-            type BaseMarker = #marker_ident #type_generics;
-
             const IS_SEND: bool = false;
             const IS_SYNC: bool = false;
 
-            fn get_dyn_dyn_table(&self) -> #dyn_dyn::DynDynTable { <Self as #dyn_dyn::internal::DynDynBase<Self::BaseMarker>>::get_dyn_dyn_table(self) }
+            fn get_dyn_dyn_table(&self) -> #dyn_dyn::DynDynTable { <Self as #base_trait_ident #type_generics>::__dyn_dyn_get_table(self) }
         }
     };
 

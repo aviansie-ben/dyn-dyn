@@ -98,6 +98,24 @@ fn test_generic_base_from_param() {
 }
 
 #[test]
+fn test_generic_base_blanket_impl() {
+    #[dyn_dyn_base]
+    trait Base<T: 'static> {}
+    trait TestTrait<T: 'static> {}
+
+    struct TestStruct;
+
+    #[dyn_dyn_derived(TestTrait<T>)]
+    impl<T: 'static> Base<T> for TestStruct {}
+    impl<T: 'static> TestTrait<T> for TestStruct {}
+
+    assert!((&TestStruct as &dyn Base<u32>).try_downcast::<dyn TestTrait<u32>>().is_some());
+    assert!((&TestStruct as &dyn Base<u32>).try_downcast::<dyn TestTrait<u64>>().is_none());
+    assert!((&TestStruct as &dyn Base<u64>).try_downcast::<dyn TestTrait<u32>>().is_none());
+    assert!((&TestStruct as &dyn Base<u64>).try_downcast::<dyn TestTrait<u64>>().is_some());
+}
+
+#[test]
 fn test_where_clause() {
     #[dyn_dyn_base]
     trait Base {}
