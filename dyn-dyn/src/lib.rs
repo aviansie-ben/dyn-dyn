@@ -7,6 +7,7 @@
 #![feature(ptr_metadata)]
 
 mod dyn_trait;
+mod fat;
 
 #[doc(hidden)]
 pub mod internal;
@@ -15,6 +16,7 @@ use std::any::TypeId;
 use std::ptr::NonNull;
 
 pub use dyn_trait::DynInfo;
+pub use fat::DynDynFat;
 use internal::*;
 use crate::dyn_trait::{AnyDynMetadata, DynTrait};
 
@@ -47,7 +49,7 @@ impl DynDynTableEntry {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct DynDynTable {
     traits: &'static [DynDynTableEntry]
 }

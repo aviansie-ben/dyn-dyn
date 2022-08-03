@@ -12,3 +12,4 @@ dynamic-names = []
 [dependencies]
 cfg-if = "1.0"
 dyn-dyn-macros = { path = "../dyn-dyn-macros", version="0.1.0" }
+stable_deref_trait = "1.2.0"
