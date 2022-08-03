@@ -116,7 +116,22 @@ fn test_generic_base_blanket_impl() {
 }
 
 #[test]
-fn test_where_clause() {
+fn test_where_clause_on_base() {
+    #[dyn_dyn_base]
+    trait Base<T> where T: 'static {}
+    trait TestTrait {}
+
+    struct TestStruct;
+
+    #[dyn_dyn_derived(TestTrait)]
+    impl Base<u32> for TestStruct {}
+    impl TestTrait for TestStruct {}
+
+    assert!((&TestStruct as &dyn Base<u32>).try_downcast::<dyn TestTrait>().is_some());
+}
+
+#[test]
+fn test_where_clause_on_derived() {
     #[dyn_dyn_base]
     trait Base {}
 
