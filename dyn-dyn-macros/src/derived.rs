@@ -1,17 +1,27 @@
+use crate::util;
 use proc_macro::{Diagnostic, Level};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
-use syn::{GenericParam, ItemImpl, Token, Type};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use crate::util;
+use syn::{GenericParam, ItemImpl, Token, Type};
 
 pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> TokenStream {
     if input.trait_.is_none() {
-        Diagnostic::spanned(proc_macro::Span::call_site(), Level::Error, "Cannot use dyn_dyn_derived on an inherent impl block").emit();
+        Diagnostic::spanned(
+            proc_macro::Span::call_site(),
+            Level::Error,
+            "Cannot use dyn_dyn_derived on an inherent impl block",
+        )
+        .emit();
         return input.to_token_stream();
     } else if input.trait_.as_ref().unwrap().0.is_some() {
-        Diagnostic::spanned(proc_macro::Span::call_site(), Level::Error, "Cannot use dyn_dyn_derived on a negative impl block").emit();
+        Diagnostic::spanned(
+            proc_macro::Span::call_site(),
+            Level::Error,
+            "Cannot use dyn_dyn_derived on a negative impl block",
+        )
+        .emit();
         return input.to_token_stream();
     }
 
@@ -30,7 +40,12 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
     }
 
     if !bad_spans.is_empty() {
-        Diagnostic::spanned(bad_spans, Level::Error, "dyn-dyn implementors cannot have lifetime arguments").emit();
+        Diagnostic::spanned(
+            bad_spans,
+            Level::Error,
+            "dyn-dyn implementors cannot have lifetime arguments",
+        )
+        .emit();
         return input.to_token_stream();
     }
 
@@ -48,11 +63,9 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
     let convert_fns_1 = convert_fns_0.clone();
     let convert_tys_1 = args.iter();
 
-    let marker_contents = input.generics.params.iter().filter_map(|p| {
-        match *p {
-            GenericParam::Type(ref p) => Some(p.ident.clone()),
-            _ => None
-        }
+    let marker_contents = input.generics.params.iter().filter_map(|p| match *p {
+        GenericParam::Type(ref p) => Some(p.ident.clone()),
+        _ => None,
     });
     let marker_contents = quote!(#(#marker_contents),*);
 

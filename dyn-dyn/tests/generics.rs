@@ -20,11 +20,19 @@ fn test_generic_base() {
     impl TestTraitA for TestStruct {}
     impl TestTraitB for TestStruct {}
 
-    assert!((&TestStruct as &dyn Base<u32>).try_downcast::<dyn TestTraitA>().is_some());
-    assert!((&TestStruct as &dyn Base<u32>).try_downcast::<dyn TestTraitB>().is_none());
+    assert!((&TestStruct as &dyn Base<u32>)
+        .try_downcast::<dyn TestTraitA>()
+        .is_some());
+    assert!((&TestStruct as &dyn Base<u32>)
+        .try_downcast::<dyn TestTraitB>()
+        .is_none());
 
-    assert!((&TestStruct as &dyn Base<u64>).try_downcast::<dyn TestTraitA>().is_none());
-    assert!((&TestStruct as &dyn Base<u64>).try_downcast::<dyn TestTraitB>().is_some());
+    assert!((&TestStruct as &dyn Base<u64>)
+        .try_downcast::<dyn TestTraitA>()
+        .is_none());
+    assert!((&TestStruct as &dyn Base<u64>)
+        .try_downcast::<dyn TestTraitB>()
+        .is_some());
 }
 
 #[test]
@@ -41,15 +49,34 @@ fn test_generic_trait() {
     #[dyn_dyn_derived(GenericTrait<u32>, GenericTrait<u64>)]
     impl Base for TestStruct {}
     impl GenericTrait<u32> for TestStruct {
-        fn test(&self) -> u32 { 0 }
+        fn test(&self) -> u32 {
+            0
+        }
     }
     impl GenericTrait<u64> for TestStruct {
-        fn test(&self) -> u32 { 1 }
+        fn test(&self) -> u32 {
+            1
+        }
     }
 
-    assert_eq!(Some(0), (&TestStruct as &dyn Base).try_downcast::<dyn GenericTrait<u32>>().map(|b| b.test()));
-    assert_eq!(Some(1), (&TestStruct as &dyn Base).try_downcast::<dyn GenericTrait<u64>>().map(|b| b.test()));
-    assert_eq!(None, (&TestStruct as &dyn Base).try_downcast::<dyn GenericTrait<u16>>().map(|b| b.test()));
+    assert_eq!(
+        Some(0),
+        (&TestStruct as &dyn Base)
+            .try_downcast::<dyn GenericTrait<u32>>()
+            .map(|b| b.test())
+    );
+    assert_eq!(
+        Some(1),
+        (&TestStruct as &dyn Base)
+            .try_downcast::<dyn GenericTrait<u64>>()
+            .map(|b| b.test())
+    );
+    assert_eq!(
+        None,
+        (&TestStruct as &dyn Base)
+            .try_downcast::<dyn GenericTrait<u16>>()
+            .map(|b| b.test())
+    );
 }
 
 #[test]
@@ -72,11 +99,31 @@ fn test_generic_trait_from_param() {
         }
     }
 
-    assert_eq!(Some(1234), (&TestStruct(0_u32) as &dyn Base).try_downcast::<dyn GenericTrait<u32>>().map(|b| b.test()));
-    assert_eq!(None, (&TestStruct(0_u32) as &dyn Base).try_downcast::<dyn GenericTrait<u64>>().map(|b| b.test()));
+    assert_eq!(
+        Some(1234),
+        (&TestStruct(0_u32) as &dyn Base)
+            .try_downcast::<dyn GenericTrait<u32>>()
+            .map(|b| b.test())
+    );
+    assert_eq!(
+        None,
+        (&TestStruct(0_u32) as &dyn Base)
+            .try_downcast::<dyn GenericTrait<u64>>()
+            .map(|b| b.test())
+    );
 
-    assert_eq!(None, (&TestStruct(0_u64) as &dyn Base).try_downcast::<dyn GenericTrait<u32>>().map(|b| b.test()));
-    assert_eq!(Some(1234), (&TestStruct(0_u64) as &dyn Base).try_downcast::<dyn GenericTrait<u64>>().map(|b| b.test()));
+    assert_eq!(
+        None,
+        (&TestStruct(0_u64) as &dyn Base)
+            .try_downcast::<dyn GenericTrait<u32>>()
+            .map(|b| b.test())
+    );
+    assert_eq!(
+        Some(1234),
+        (&TestStruct(0_u64) as &dyn Base)
+            .try_downcast::<dyn GenericTrait<u64>>()
+            .map(|b| b.test())
+    );
 }
 
 #[test]
@@ -91,10 +138,18 @@ fn test_generic_base_from_param() {
     impl<T: 'static> Base<T> for TestStruct<T> {}
     impl<T: 'static> TestTrait<T> for TestStruct<T> {}
 
-    assert!((&TestStruct(0_u32) as &dyn Base<u32>).try_downcast::<dyn TestTrait<u32>>().is_some());
-    assert!((&TestStruct(0_u32) as &dyn Base<u32>).try_downcast::<dyn TestTrait<u64>>().is_none());
-    assert!((&TestStruct(0_u64) as &dyn Base<u64>).try_downcast::<dyn TestTrait<u32>>().is_none());
-    assert!((&TestStruct(0_u64) as &dyn Base<u64>).try_downcast::<dyn TestTrait<u64>>().is_some());
+    assert!((&TestStruct(0_u32) as &dyn Base<u32>)
+        .try_downcast::<dyn TestTrait<u32>>()
+        .is_some());
+    assert!((&TestStruct(0_u32) as &dyn Base<u32>)
+        .try_downcast::<dyn TestTrait<u64>>()
+        .is_none());
+    assert!((&TestStruct(0_u64) as &dyn Base<u64>)
+        .try_downcast::<dyn TestTrait<u32>>()
+        .is_none());
+    assert!((&TestStruct(0_u64) as &dyn Base<u64>)
+        .try_downcast::<dyn TestTrait<u64>>()
+        .is_some());
 }
 
 #[test]
@@ -109,16 +164,28 @@ fn test_generic_base_blanket_impl() {
     impl<T: 'static> Base<T> for TestStruct {}
     impl<T: 'static> TestTrait<T> for TestStruct {}
 
-    assert!((&TestStruct as &dyn Base<u32>).try_downcast::<dyn TestTrait<u32>>().is_some());
-    assert!((&TestStruct as &dyn Base<u32>).try_downcast::<dyn TestTrait<u64>>().is_none());
-    assert!((&TestStruct as &dyn Base<u64>).try_downcast::<dyn TestTrait<u32>>().is_none());
-    assert!((&TestStruct as &dyn Base<u64>).try_downcast::<dyn TestTrait<u64>>().is_some());
+    assert!((&TestStruct as &dyn Base<u32>)
+        .try_downcast::<dyn TestTrait<u32>>()
+        .is_some());
+    assert!((&TestStruct as &dyn Base<u32>)
+        .try_downcast::<dyn TestTrait<u64>>()
+        .is_none());
+    assert!((&TestStruct as &dyn Base<u64>)
+        .try_downcast::<dyn TestTrait<u32>>()
+        .is_none());
+    assert!((&TestStruct as &dyn Base<u64>)
+        .try_downcast::<dyn TestTrait<u64>>()
+        .is_some());
 }
 
 #[test]
 fn test_where_clause_on_base() {
     #[dyn_dyn_base]
-    trait Base<T> where T: 'static {}
+    trait Base<T>
+    where
+        T: 'static,
+    {
+    }
     trait TestTrait {}
 
     struct TestStruct;
@@ -127,7 +194,9 @@ fn test_where_clause_on_base() {
     impl Base<u32> for TestStruct {}
     impl TestTrait for TestStruct {}
 
-    assert!((&TestStruct as &dyn Base<u32>).try_downcast::<dyn TestTrait>().is_some());
+    assert!((&TestStruct as &dyn Base<u32>)
+        .try_downcast::<dyn TestTrait>()
+        .is_some());
 }
 
 #[test]
@@ -139,7 +208,9 @@ fn test_where_clause_on_derived() {
         fn test(&self) -> u32;
     }
 
-    struct TestStruct<T>(T) where T: 'static;
+    struct TestStruct<T>(T)
+    where
+        T: 'static;
 
     #[dyn_dyn_derived(GenericTrait<T>)]
     impl<T> Base for TestStruct<T> where T: 'static {}
@@ -150,9 +221,29 @@ fn test_where_clause_on_derived() {
         }
     }
 
-    assert_eq!(Some(1234), (&TestStruct(0_u32) as &dyn Base).try_downcast::<dyn GenericTrait<u32>>().map(|b| b.test()));
-    assert_eq!(None, (&TestStruct(0_u32) as &dyn Base).try_downcast::<dyn GenericTrait<u64>>().map(|b| b.test()));
+    assert_eq!(
+        Some(1234),
+        (&TestStruct(0_u32) as &dyn Base)
+            .try_downcast::<dyn GenericTrait<u32>>()
+            .map(|b| b.test())
+    );
+    assert_eq!(
+        None,
+        (&TestStruct(0_u32) as &dyn Base)
+            .try_downcast::<dyn GenericTrait<u64>>()
+            .map(|b| b.test())
+    );
 
-    assert_eq!(None, (&TestStruct(0_u64) as &dyn Base).try_downcast::<dyn GenericTrait<u32>>().map(|b| b.test()));
-    assert_eq!(Some(1234), (&TestStruct(0_u64) as &dyn Base).try_downcast::<dyn GenericTrait<u64>>().map(|b| b.test()));
+    assert_eq!(
+        None,
+        (&TestStruct(0_u64) as &dyn Base)
+            .try_downcast::<dyn GenericTrait<u32>>()
+            .map(|b| b.test())
+    );
+    assert_eq!(
+        Some(1234),
+        (&TestStruct(0_u64) as &dyn Base)
+            .try_downcast::<dyn GenericTrait<u64>>()
+            .map(|b| b.test())
+    );
 }

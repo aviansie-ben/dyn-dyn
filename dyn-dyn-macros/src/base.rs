@@ -1,8 +1,8 @@
 use proc_macro::{Diagnostic, Level};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
-use syn::{GenericParam, ItemTrait};
 use syn::spanned::Spanned;
+use syn::{GenericParam, ItemTrait};
 
 use crate::util;
 
@@ -22,7 +22,12 @@ pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
     }
 
     if !bad_spans.is_empty() {
-        Diagnostic::spanned(bad_spans, Level::Error, "dyn-dyn base traits cannot have lifetime arguments").emit();
+        Diagnostic::spanned(
+            bad_spans,
+            Level::Error,
+            "dyn-dyn base traits cannot have lifetime arguments",
+        )
+        .emit();
         return input.to_token_stream();
     }
 
@@ -31,7 +36,9 @@ pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
 
     base_trait_impl_generics.params.push(syn::parse2(quote!(__dyn_dyn_T: ?Sized + #dyn_dyn::internal::DynDynDerived<dyn #ident #type_generics>)).unwrap());
 
-    input.supertraits.push(syn::parse2(quote!(#base_trait_ident #type_generics)).unwrap());
+    input
+        .supertraits
+        .push(syn::parse2(quote!(#base_trait_ident #type_generics)).unwrap());
 
     let tokens = quote! {
         #input

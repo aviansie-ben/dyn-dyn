@@ -2,16 +2,19 @@
 
 extern crate proc_macro;
 
-use syn::{ItemImpl, ItemTrait, Token, Type, parse_macro_input};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
+use syn::{parse_macro_input, ItemImpl, ItemTrait, Token, Type};
 
 mod base;
 mod derived;
 mod util;
 
 #[proc_macro_attribute]
-pub fn dyn_dyn_base(args: proc_macro::TokenStream, input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn dyn_dyn_base(
+    args: proc_macro::TokenStream,
+    input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
     base::dyn_dyn_base(args.into(), parse_macro_input!(input as ItemTrait)).into()
 }
 
@@ -24,6 +27,13 @@ impl Parse for DerivedTypes {
 }
 
 #[proc_macro_attribute]
-pub fn dyn_dyn_derived(args: proc_macro::TokenStream, input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    derived::dyn_dyn_derived(parse_macro_input!(args as DerivedTypes).0, parse_macro_input!(input as ItemImpl)).into()
+pub fn dyn_dyn_derived(
+    args: proc_macro::TokenStream,
+    input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    derived::dyn_dyn_derived(
+        parse_macro_input!(args as DerivedTypes).0,
+        parse_macro_input!(input as ItemImpl),
+    )
+    .into()
 }

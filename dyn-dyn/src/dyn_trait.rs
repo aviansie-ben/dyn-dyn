@@ -1,7 +1,7 @@
-use std::any::TypeId;
-use std::{mem, ptr};
-use std::ptr::{DynMetadata, NonNull, Pointee};
 use cfg_if::cfg_if;
+use std::any::TypeId;
+use std::ptr::{DynMetadata, NonNull, Pointee};
+use std::{mem, ptr};
 
 #[derive(Debug, Clone, Copy)]
 pub struct AnyDynMetadata(DynMetadata<()>);

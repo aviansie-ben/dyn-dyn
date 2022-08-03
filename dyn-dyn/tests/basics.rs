@@ -1,6 +1,6 @@
-use std::fmt;
 use dyn_dyn::DynDyn;
 use dyn_dyn_macros::{dyn_dyn_base, dyn_dyn_derived};
+use std::fmt;
 
 #[test]
 fn test_vtable_correct() {
@@ -57,12 +57,19 @@ fn test_data_pointer_correct() {
     impl Base for TestStruct {}
 
     impl TestTrait for TestStruct {
-        fn test(&self) -> *const TestStruct { self }
+        fn test(&self) -> *const TestStruct {
+            self
+        }
     }
 
     let test = TestStruct;
 
-    assert_eq!(Some(&test as *const _), (&test as &dyn Base).try_downcast::<dyn TestTrait>().map(|t| t.test()));
+    assert_eq!(
+        Some(&test as *const _),
+        (&test as &dyn Base)
+            .try_downcast::<dyn TestTrait>()
+            .map(|t| t.test())
+    );
 }
 
 #[test]
@@ -81,7 +88,12 @@ fn test_external_trait() {
         }
     }
 
-    assert_eq!(Some("TestStruct(\"abc\")".to_owned()), (&TestStruct("abc") as &dyn Base).try_downcast::<dyn fmt::Debug>().map(|f| format!("{:?}", f)));
+    assert_eq!(
+        Some("TestStruct(\"abc\")".to_owned()),
+        (&TestStruct("abc") as &dyn Base)
+            .try_downcast::<dyn fmt::Debug>()
+            .map(|f| format!("{:?}", f))
+    );
 }
 
 #[test]
@@ -94,5 +106,7 @@ fn test_external_type() {
     impl Base for u32 {}
     impl TestTrait for u32 {}
 
-    assert!((&0_u32 as &dyn Base).try_downcast::<dyn TestTrait>().is_some());
+    assert!((&0_u32 as &dyn Base)
+        .try_downcast::<dyn TestTrait>()
+        .is_some());
 }

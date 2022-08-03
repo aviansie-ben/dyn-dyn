@@ -15,10 +15,10 @@ pub mod internal;
 use std::any::TypeId;
 use std::ptr::NonNull;
 
+use crate::dyn_trait::{AnyDynMetadata, DynTrait};
 pub use dyn_trait::DynInfo;
 pub use fat::DynDynFat;
 use internal::*;
-use crate::dyn_trait::{AnyDynMetadata, DynTrait};
 
 #[derive(Debug)]
 pub struct DynDynTableEntry {
@@ -26,7 +26,7 @@ pub struct DynDynTableEntry {
     send_ty: TypeId,
     sync_ty: TypeId,
     send_sync_ty: TypeId,
-    meta: AnyDynMetadata
+    meta: AnyDynMetadata,
 }
 
 impl DynDynTableEntry {
@@ -37,44 +37,55 @@ impl DynDynTableEntry {
         DSend: ?Sized + ~const DynTrait + 'static,
         DSync: ?Sized + ~const DynTrait + 'static,
         DSendSync: ?Sized + ~const DynTrait + 'static,
-        F: ~const FnOnce(*const T) -> *const D
-    >(f: F) -> DynDynTableEntry {
+        F: ~const FnOnce(*const T) -> *const D,
+    >(
+        f: F,
+    ) -> DynDynTableEntry {
         DynDynTableEntry {
             ty: DynInfo::of::<D>(),
             send_ty: TypeId::of::<DSend>(),
             sync_ty: TypeId::of::<DSync>(),
             send_sync_ty: TypeId::of::<DSendSync>(),
-            meta: D::meta_for_ty(f)
+            meta: D::meta_for_ty(f),
         }
     }
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct DynDynTable {
-    traits: &'static [DynDynTableEntry]
+    traits: &'static [DynDynTableEntry],
 }
 
 impl DynDynTable {
     fn find(&self, type_id: TypeId, send: bool, sync: bool) -> Option<AnyDynMetadata> {
-        self.traits.iter().find(|&entry| {
-            #[allow(clippy::if_same_then_else)]
-            #[allow(clippy::needless_bool)]
-            if entry.ty.type_id() == type_id {
-                true
-            } else if send && entry.send_ty == type_id {
-                true
-            } else if sync && entry.sync_ty == type_id {
-                true
-            } else if send && sync && entry.send_sync_ty == type_id {
-                true
-            } else {
-                false
-            }
-        }).map(|entry| entry.meta)
+        self.traits
+            .iter()
+            .find(|&entry| {
+                #[allow(clippy::if_same_then_else)]
+                #[allow(clippy::needless_bool)]
+                if entry.ty.type_id() == type_id {
+                    true
+                } else if send && entry.send_ty == type_id {
+                    true
+                } else if sync && entry.sync_ty == type_id {
+                    true
+                } else if send && sync && entry.send_sync_ty == type_id {
+                    true
+                } else {
+                    false
+                }
+            })
+            .map(|entry| entry.meta)
     }
 
-    unsafe fn find_dyn<D: DynTrait + ?Sized>(&self, data: NonNull<()>, send: bool, sync: bool) -> Option<NonNull<D>> {
-        self.find(TypeId::of::<D>(), send, sync).map(|meta| D::ptr_from_parts(data, meta))
+    unsafe fn find_dyn<D: DynTrait + ?Sized>(
+        &self,
+        data: NonNull<()>,
+        send: bool,
+        sync: bool,
+    ) -> Option<NonNull<D>> {
+        self.find(TypeId::of::<D>(), send, sync)
+            .map(|meta| D::ptr_from_parts(data, meta))
     }
 
     #[doc(hidden)]
@@ -100,13 +111,17 @@ pub trait DynDyn: sealed::Sealed {
 impl<T: DynDynImpl + ?Sized> DynDyn for T {
     fn try_downcast<D: DynTrait + ?Sized>(&self) -> Option<&D> {
         unsafe {
-            self.get_dyn_dyn_table().find_dyn(NonNull::from(self).cast(), Self::IS_SEND, Self::IS_SYNC).map(|ptr| &*ptr.as_ptr())
+            self.get_dyn_dyn_table()
+                .find_dyn(NonNull::from(self).cast(), Self::IS_SEND, Self::IS_SYNC)
+                .map(|ptr| &*ptr.as_ptr())
         }
     }
 
     fn try_downcast_mut<D: DynTrait + ?Sized>(&mut self) -> Option<&mut D> {
         unsafe {
-            self.get_dyn_dyn_table().find_dyn(NonNull::from(self).cast(), Self::IS_SEND, Self::IS_SYNC).map(|ptr| &mut *ptr.as_ptr())
+            self.get_dyn_dyn_table()
+                .find_dyn(NonNull::from(self).cast(), Self::IS_SEND, Self::IS_SYNC)
+                .map(|ptr| &mut *ptr.as_ptr())
         }
     }
 }
