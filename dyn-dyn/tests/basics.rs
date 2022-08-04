@@ -1,5 +1,4 @@
-use dyn_dyn::DynDyn;
-use dyn_dyn_macros::{dyn_dyn_base, dyn_dyn_derived};
+use dyn_dyn_macros::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_derived};
 use std::fmt;
 
 #[test]
@@ -38,9 +37,9 @@ fn test_vtable_correct() {
 
     let d = &TestStruct as &dyn Base;
 
-    assert_eq!(Some(1), d.try_downcast::<dyn SubTraitA>().map(|a| a.a()));
-    assert_eq!(Some(2), d.try_downcast::<dyn SubTraitB>().map(|b| b.b()));
-    assert_eq!(None, d.try_downcast::<dyn SubTraitC>().map(|c| c.c()));
+    assert_eq!(Some(1), dyn_dyn_cast!(d as &dyn SubTraitA).map(|a| a.a()));
+    assert_eq!(Some(2), dyn_dyn_cast!(d as &dyn SubTraitB).map(|b| b.b()));
+    assert_eq!(None, dyn_dyn_cast!(d as &dyn SubTraitC).map(|c| c.c()));
 }
 
 #[test]
@@ -66,9 +65,7 @@ fn test_data_pointer_correct() {
 
     assert_eq!(
         Some(&test as *const _),
-        (&test as &dyn Base)
-            .try_downcast::<dyn TestTrait>()
-            .map(|t| t.test())
+        dyn_dyn_cast!((&test as &dyn Base) as &dyn TestTrait).map(|t| t.test())
     );
 }
 
@@ -90,8 +87,7 @@ fn test_external_trait() {
 
     assert_eq!(
         Some("TestStruct(\"abc\")".to_owned()),
-        (&TestStruct("abc") as &dyn Base)
-            .try_downcast::<dyn fmt::Debug>()
+        dyn_dyn_cast!((&TestStruct("abc") as &dyn Base) as &dyn fmt::Debug)
             .map(|f| format!("{:?}", f))
     );
 }
@@ -106,9 +102,7 @@ fn test_external_type() {
     impl Base for u32 {}
     impl TestTrait for u32 {}
 
-    assert!((&0_u32 as &dyn Base)
-        .try_downcast::<dyn TestTrait>()
-        .is_some());
+    assert!(dyn_dyn_cast!((&0_u32 as &dyn Base) as &dyn TestTrait).is_some());
 }
 
 #[test]
@@ -131,17 +125,9 @@ fn test_multi_base() {
     impl BaseB for TestStruct {}
     impl TraitB for TestStruct {}
 
-    assert!((&TestStruct as &dyn BaseA)
-        .try_downcast::<dyn TraitA>()
-        .is_some());
-    assert!((&TestStruct as &dyn BaseA)
-        .try_downcast::<dyn TraitB>()
-        .is_none());
+    assert!(dyn_dyn_cast!((&TestStruct as &dyn BaseA) as &dyn TraitA).is_some());
+    assert!(dyn_dyn_cast!((&TestStruct as &dyn BaseA) as &dyn TraitB).is_none());
 
-    assert!((&TestStruct as &dyn BaseB)
-        .try_downcast::<dyn TraitA>()
-        .is_none());
-    assert!((&TestStruct as &dyn BaseB)
-        .try_downcast::<dyn TraitB>()
-        .is_some());
+    assert!(dyn_dyn_cast!((&TestStruct as &dyn BaseB) as &dyn TraitA).is_none());
+    assert!(dyn_dyn_cast!((&TestStruct as &dyn BaseB) as &dyn TraitB).is_some());
 }
