@@ -4,7 +4,8 @@ extern crate proc_macro;
 
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use syn::{parse_macro_input, ExprCast, ItemImpl, ItemTrait, Token, Type};
+use syn::{parse_macro_input, ItemImpl, ItemTrait, Token, Type};
+use crate::cast::DynDynCastInput;
 
 mod base;
 mod cast;
@@ -13,7 +14,7 @@ mod util;
 
 #[proc_macro]
 pub fn dyn_dyn_cast(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    cast::dyn_dyn_cast(parse_macro_input!(input as ExprCast)).into()
+    cast::dyn_dyn_cast(parse_macro_input!(input as DynDynCastInput)).into()
 }
 
 #[proc_macro_attribute]

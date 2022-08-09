@@ -5,27 +5,29 @@
 #![feature(const_type_id)]
 #![cfg_attr(feature = "dynamic-names", feature(const_type_name))]
 #![feature(ptr_metadata)]
+#![feature(unsize)]
 
 mod dyn_trait;
 mod fat;
 
+pub use fat::DynDynFat;
+
 #[doc(hidden)]
 pub mod internal;
 
+use stable_deref_trait::StableDeref;
 use std::any::TypeId;
+use std::marker::Unsize;
+use std::ops::{Deref, DerefMut};
 use std::ptr::NonNull;
 
 use crate::dyn_trait::{AnyDynMetadata, DynTrait};
 pub use dyn_trait::DynInfo;
-pub use fat::DynDynFat;
 use internal::*;
 
 #[derive(Debug)]
 pub struct DynDynTableEntry {
     ty: DynInfo,
-    send_ty: TypeId,
-    sync_ty: TypeId,
-    send_sync_ty: TypeId,
     meta: AnyDynMetadata,
 }
 
@@ -34,18 +36,12 @@ impl DynDynTableEntry {
     pub const unsafe fn new<
         T,
         D: ?Sized + ~const DynTrait + 'static,
-        DSend: ?Sized + ~const DynTrait + 'static,
-        DSync: ?Sized + ~const DynTrait + 'static,
-        DSendSync: ?Sized + ~const DynTrait + 'static,
         F: ~const FnOnce(*const T) -> *const D,
     >(
         f: F,
     ) -> DynDynTableEntry {
         DynDynTableEntry {
             ty: DynInfo::of::<D>(),
-            send_ty: TypeId::of::<DSend>(),
-            sync_ty: TypeId::of::<DSync>(),
-            send_sync_ty: TypeId::of::<DSendSync>(),
             meta: D::meta_for_ty(f),
         }
     }
@@ -57,34 +53,15 @@ pub struct DynDynTable {
 }
 
 impl DynDynTable {
-    fn find(&self, type_id: TypeId, send: bool, sync: bool) -> Option<AnyDynMetadata> {
+    fn find(&self, type_id: TypeId) -> Option<AnyDynMetadata> {
         self.traits
             .iter()
-            .find(|&entry| {
-                #[allow(clippy::if_same_then_else)]
-                #[allow(clippy::needless_bool)]
-                if entry.ty.type_id() == type_id {
-                    true
-                } else if send && entry.send_ty == type_id {
-                    true
-                } else if sync && entry.sync_ty == type_id {
-                    true
-                } else if send && sync && entry.send_sync_ty == type_id {
-                    true
-                } else {
-                    false
-                }
-            })
+            .find(|&entry| entry.ty.type_id() == type_id)
             .map(|entry| entry.meta)
     }
 
-    unsafe fn find_dyn<D: DynTrait + ?Sized>(
-        &self,
-        data: NonNull<()>,
-        send: bool,
-        sync: bool,
-    ) -> Option<NonNull<D>> {
-        self.find(TypeId::of::<D>(), send, sync)
+    unsafe fn find_dyn<D: DynTrait + ?Sized>(&self, data: NonNull<()>) -> Option<NonNull<D>> {
+        self.find(TypeId::of::<D>())
             .map(|meta| D::ptr_from_parts(data, meta))
     }
 
@@ -94,34 +71,44 @@ impl DynDynTable {
     }
 }
 
-mod sealed {
-    pub trait Sealed {}
+pub unsafe trait DynDyn<'a, B: ?Sized + DynDynBase> {
+    type DerefTarget: ?Sized;
 
-    impl<T: crate::internal::DynDynImpl + ?Sized> Sealed for T {}
+    fn deref_dyn_dyn(&self) -> (&B, DynDynTable);
 }
 
-pub trait DynDyn: sealed::Sealed {
-    #[must_use]
-    fn try_downcast<D: DynTrait + ?Sized>(&self) -> Option<&D>;
+unsafe impl<'a, B: ?Sized + DynDynBase, T: Deref> DynDyn<'a, B> for T
+where
+    T::Target: Unsize<B> + 'a,
+{
+    type DerefTarget = T::Target;
 
-    #[must_use]
-    fn try_downcast_mut<D: DynTrait + ?Sized>(&mut self) -> Option<&mut D>;
-}
+    #[inline]
+    fn deref_dyn_dyn(&self) -> (&B, DynDynTable) {
+        let tgt = &**self;
+        let table = B::get_dyn_dyn_table(tgt);
 
-impl<T: DynDynImpl + ?Sized> DynDyn for T {
-    fn try_downcast<D: DynTrait + ?Sized>(&self) -> Option<&D> {
-        unsafe {
-            self.get_dyn_dyn_table()
-                .find_dyn(NonNull::from(self).cast(), Self::IS_SEND, Self::IS_SYNC)
-                .map(|ptr| &*ptr.as_ptr())
-        }
-    }
-
-    fn try_downcast_mut<D: DynTrait + ?Sized>(&mut self) -> Option<&mut D> {
-        unsafe {
-            self.get_dyn_dyn_table()
-                .find_dyn(NonNull::from(self).cast(), Self::IS_SEND, Self::IS_SYNC)
-                .map(|ptr| &mut *ptr.as_ptr())
-        }
+        (tgt, table)
     }
 }
+
+pub unsafe trait DynDynMut<'a, B: ?Sized + DynDynBase>: DynDyn<'a, B> {
+    fn deref_mut_dyn_dyn(&mut self) -> (&mut B, DynDynTable);
+}
+
+unsafe impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B> + DerefMut> DynDynMut<'a, B> for T
+where
+    T::Target: Unsize<B> + 'a,
+{
+    #[inline]
+    fn deref_mut_dyn_dyn(&mut self) -> (&mut B, DynDynTable) {
+        let tgt = &mut **self;
+        let table = B::get_dyn_dyn_table(tgt);
+
+        (tgt, table)
+    }
+}
+
+pub unsafe trait StableDynDyn<'a, B: ?Sized + DynDynBase>: DynDyn<'a, B> {}
+
+unsafe impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B> + StableDeref> StableDynDyn<'a, B> for T {}

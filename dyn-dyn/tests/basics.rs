@@ -1,5 +1,6 @@
 use dyn_dyn_macros::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_derived};
 use std::fmt;
+use std::rc::Rc;
 
 #[test]
 fn test_vtable_correct() {
@@ -37,9 +38,9 @@ fn test_vtable_correct() {
 
     let d = &TestStruct as &dyn Base;
 
-    assert_eq!(Some(1), dyn_dyn_cast!(d as &dyn SubTraitA).map(|a| a.a()));
-    assert_eq!(Some(2), dyn_dyn_cast!(d as &dyn SubTraitB).map(|b| b.b()));
-    assert_eq!(None, dyn_dyn_cast!(d as &dyn SubTraitC).map(|c| c.c()));
+    assert_eq!(Some(1), dyn_dyn_cast!(Base => SubTraitA, d).map(|a| a.a()));
+    assert_eq!(Some(2), dyn_dyn_cast!(Base => SubTraitB, d).map(|b| b.b()));
+    assert_eq!(None, dyn_dyn_cast!(Base => SubTraitC, d).map(|c| c.c()));
 }
 
 #[test]
@@ -63,9 +64,42 @@ fn test_data_pointer_correct() {
 
     let test = TestStruct;
 
+    let t = dyn_dyn_cast!(Base => TestTrait, &test);
+
+    assert_eq!(Some(&test as *const _), t.map(|t| t.test()));
+}
+
+#[test]
+fn test_from_alloc() {
+    #[dyn_dyn_base]
+    trait Base {}
+    trait TestTrait {
+        fn test(&self) -> *const TestStruct;
+    }
+
+    struct TestStruct;
+
+    #[dyn_dyn_derived(TestTrait)]
+    impl Base for TestStruct {}
+
+    impl TestTrait for TestStruct {
+        fn test(&self) -> *const TestStruct {
+            self
+        }
+    }
+
+    let test_box = Box::new(TestStruct);
+
     assert_eq!(
-        Some(&test as *const _),
-        dyn_dyn_cast!((&test as &dyn Base) as &dyn TestTrait).map(|t| t.test())
+        Some(&*test_box as *const _),
+        dyn_dyn_cast!(Base => TestTrait, &test_box).map(|t| t.test())
+    );
+
+    let test_rc = Rc::new(TestStruct);
+
+    assert_eq!(
+        Some(&*test_rc as *const _),
+        dyn_dyn_cast!(Base => TestTrait, &test_rc).map(|t| t.test())
     );
 }
 
@@ -87,7 +121,7 @@ fn test_external_trait() {
 
     assert_eq!(
         Some("TestStruct(\"abc\")".to_owned()),
-        dyn_dyn_cast!((&TestStruct("abc") as &dyn Base) as &dyn fmt::Debug)
+        dyn_dyn_cast!(Base => fmt::Debug, &TestStruct("abc") as &dyn Base)
             .map(|f| format!("{:?}", f))
     );
 }
@@ -102,7 +136,7 @@ fn test_external_type() {
     impl Base for u32 {}
     impl TestTrait for u32 {}
 
-    assert!(dyn_dyn_cast!((&0_u32 as &dyn Base) as &dyn TestTrait).is_some());
+    assert!(dyn_dyn_cast!(Base => TestTrait, &0_u32 as &dyn Base).is_some());
 }
 
 #[test]
@@ -125,9 +159,9 @@ fn test_multi_base() {
     impl BaseB for TestStruct {}
     impl TraitB for TestStruct {}
 
-    assert!(dyn_dyn_cast!((&TestStruct as &dyn BaseA) as &dyn TraitA).is_some());
-    assert!(dyn_dyn_cast!((&TestStruct as &dyn BaseA) as &dyn TraitB).is_none());
+    assert!(dyn_dyn_cast!(BaseA => TraitA, &TestStruct as &dyn BaseA).is_some());
+    assert!(dyn_dyn_cast!(BaseA => TraitB, &TestStruct as &dyn BaseA).is_none());
 
-    assert!(dyn_dyn_cast!((&TestStruct as &dyn BaseB) as &dyn TraitA).is_none());
-    assert!(dyn_dyn_cast!((&TestStruct as &dyn BaseB) as &dyn TraitB).is_some());
+    assert!(dyn_dyn_cast!(BaseB => TraitA, &TestStruct as &dyn BaseB).is_none());
+    assert!(dyn_dyn_cast!(BaseB => TraitB, &TestStruct as &dyn BaseB).is_some());
 }

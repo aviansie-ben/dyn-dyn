@@ -1,89 +1,88 @@
-use crate::{DynDynImpl, DynDynTable};
+use crate::{DynDyn, DynDynBase, DynDynTable, StableDynDyn};
 use stable_deref_trait::{CloneStableDeref, StableDeref};
+use std::marker::{PhantomData, Unsize};
 use std::ops::{Deref, DerefMut};
 use std::ptr;
 
 #[derive(Debug)]
-pub struct DynDynFat<P: Deref>
+pub struct DynDynFat<B: ?Sized + DynDynBase, P: Deref>
 where
-    P::Target: DynDynImpl,
+    P::Target: Unsize<B>,
 {
     ptr: P,
     table: DynDynTable,
+    _base: PhantomData<fn(B) -> B>,
 }
 
-impl<P: Deref> DynDynImpl for DynDynFat<P>
+impl<B: ?Sized + DynDynBase, P: Deref> DynDynFat<B, P>
 where
-    P::Target: DynDynImpl,
+    P::Target: Unsize<B>,
 {
-    type BaseDynDyn = <P::Target as DynDynImpl>::BaseDynDyn;
+    pub unsafe fn new_unchecked(ptr: P) -> Self {
+        let table = DynDyn::<B>::deref_dyn_dyn(&ptr).1;
 
-    const IS_SEND: bool = P::Target::IS_SEND;
-    const IS_SYNC: bool = P::Target::IS_SYNC;
-
-    fn get_dyn_dyn_table(&self) -> DynDynTable {
-        self.table
-    }
-}
-
-impl<P: Deref> DynDynFat<P>
-where
-    P::Target: DynDynImpl,
-{
-    pub unsafe fn new_unchecked(ptr: P) -> DynDynFat<P> {
-        let table = ptr.get_dyn_dyn_table();
-
-        DynDynFat { ptr, table }
+        DynDynFat {
+            ptr,
+            table,
+            _base: PhantomData,
+        }
     }
 
-    pub fn deref_fat(ptr: &Self) -> DynDynFat<&P::Target> {
+    pub fn deref_fat(ptr: &Self) -> DynDynFat<B, &P::Target> {
         DynDynFat {
             ptr: ptr.ptr.deref(),
             table: ptr.table,
+            _base: PhantomData,
         }
     }
 
     pub fn unwrap(ptr: Self) -> P {
         ptr.ptr
     }
+
+    pub fn get_dyn_dyn_table(ptr: &Self) -> DynDynTable {
+        ptr.table
+    }
 }
 
-impl<P: DerefMut> DynDynFat<P>
+impl<B: ?Sized + DynDynBase, P: DerefMut> DynDynFat<B, P>
 where
-    P::Target: DynDynImpl,
+    P::Target: Unsize<B>,
 {
-    pub fn deref_mut_fat(ptr: &mut Self) -> DynDynFat<&mut P::Target> {
+    pub fn deref_mut_fat(ptr: &mut Self) -> DynDynFat<B, &mut P::Target> {
         DynDynFat {
             ptr: ptr.ptr.deref_mut(),
             table: ptr.table,
+            _base: PhantomData,
         }
     }
 }
 
-impl<P: StableDeref> DynDynFat<P>
+impl<'a, B: ?Sized + DynDynBase, P: Deref + StableDynDyn<'a, B>> DynDynFat<B, P>
 where
-    P::Target: DynDynImpl,
+    P::Target: Unsize<B>,
 {
-    pub fn new(ptr: P) -> DynDynFat<P> {
+    pub fn new(ptr: P) -> Self {
         unsafe { Self::new_unchecked(ptr) }
     }
 }
 
-impl<P: Deref + Clone> DynDynFat<P>
+impl<B: ?Sized + DynDynBase, P: Deref + Clone> DynDynFat<B, P>
 where
-    P::Target: DynDynImpl,
+    P::Target: Unsize<B>,
 {
     pub unsafe fn clone_unchecked(ptr: &Self) -> Self {
         DynDynFat {
             ptr: ptr.ptr.clone(),
             table: ptr.table,
+            _base: PhantomData,
         }
     }
 }
 
-impl<P: Deref> Deref for DynDynFat<P>
+impl<B: ?Sized + DynDynBase, P: Deref> Deref for DynDynFat<B, P>
 where
-    P::Target: DynDynImpl,
+    P::Target: Unsize<B>,
 {
     type Target = P::Target;
 
@@ -92,57 +91,74 @@ where
     }
 }
 
-unsafe impl<P: StableDeref> StableDeref for DynDynFat<P> where P::Target: DynDynImpl {}
-unsafe impl<P: CloneStableDeref> CloneStableDeref for DynDynFat<P> where P::Target: DynDynImpl {}
+unsafe impl<B: ?Sized + DynDynBase, P: StableDeref> StableDeref for DynDynFat<B, P> where
+    P::Target: Unsize<B>
+{
+}
+unsafe impl<B: ?Sized + DynDynBase, P: CloneStableDeref> CloneStableDeref for DynDynFat<B, P> where
+    P::Target: Unsize<B>
+{
+}
 
-impl<P: DerefMut> DerefMut for DynDynFat<P>
+impl<B: ?Sized + DynDynBase, P: DerefMut> DerefMut for DynDynFat<B, P>
 where
-    P::Target: DynDynImpl,
+    P::Target: Unsize<B>,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.ptr.deref_mut()
     }
 }
 
-impl<P: Deref + Clone> Clone for DynDynFat<P>
+impl<B: ?Sized + DynDynBase, P: Deref + Clone> Clone for DynDynFat<B, P>
 where
-    P::Target: DynDynImpl,
+    P::Target: Unsize<B>,
 {
     fn clone(&self) -> Self {
         let ptr = self.ptr.clone();
         let table = if ptr::eq(ptr.deref(), self.ptr.deref()) {
             self.table
         } else {
-            ptr.get_dyn_dyn_table()
+            DynDyn::<B>::deref_dyn_dyn(&ptr).1
         };
 
-        DynDynFat { ptr, table }
+        DynDynFat {
+            ptr,
+            table,
+            _base: PhantomData,
+        }
     }
 }
 
-impl<P: Deref + Copy> Copy for DynDynFat<P> where P::Target: DynDynImpl {}
+impl<B: ?Sized + DynDynBase, P: Deref + Copy> Copy for DynDynFat<B, P> where P::Target: Unsize<B> {}
 
 #[cfg(test)]
 mod test {
-    use crate::{DynDynFat, DynDynImpl, DynDynTable, DynDynTableEntry};
+    use crate::{DynDynBase, DynDynFat, DynDynTable, DynDynTableEntry};
     use stable_deref_trait::StableDeref;
     use std::cell::Cell;
     use std::ops::Deref;
     use std::rc::Rc;
+    use dyn_dyn_macros::dyn_dyn_cast;
 
     // We need the pointers to these two tables to be distinct in order to properly differentiate them, so these cannot be declared as
     // statics with ZSTs.
     static EMPTY_TABLE_1: (u8, [DynDynTableEntry; 0]) = (0, []);
     static EMPTY_TABLE_2: (u8, [DynDynTableEntry; 0]) = (0, []);
 
+    trait Base {
+        fn get_dyn_dyn_table(&self) -> DynDynTable;
+    }
+
+    impl<'a> DynDynBase for dyn Base + 'a {
+        fn get_dyn_dyn_table(&self) -> DynDynTable {
+            self.get_dyn_dyn_table()
+        }
+    }
+
     #[derive(Debug, Clone)]
     struct TestStruct<'a>(&'a Cell<usize>, &'static [DynDynTableEntry]);
 
-    impl<'a> DynDynImpl for TestStruct<'a> {
-        type BaseDynDyn = TestStruct<'a>;
-        const IS_SEND: bool = false;
-        const IS_SYNC: bool = false;
-
+    impl<'a> Base for TestStruct<'a> {
         fn get_dyn_dyn_table(&self) -> DynDynTable {
             self.0.set(self.0.get() + 1);
             DynDynTable::new(self.1)
@@ -170,44 +186,49 @@ mod test {
     #[test]
     fn test_get_table_cached() {
         let num_table_calls = Cell::new(0);
-        let ptr = DynDynFat::new(Box::new(TestStruct(&num_table_calls, &EMPTY_TABLE_1.1)));
+        let mut ptr: DynDynFat<dyn Base, _> =
+            DynDynFat::new(Box::new(TestStruct(&num_table_calls, &EMPTY_TABLE_1.1)));
 
         assert_eq!(1, num_table_calls.get());
         assert_eq!(
             &EMPTY_TABLE_1.1[..] as *const _,
-            ptr.get_dyn_dyn_table().traits as *const _
+            DynDynFat::get_dyn_dyn_table(&ptr).traits as *const _
         );
+        dyn_dyn_cast!(Base => Base, &ptr);
+        dyn_dyn_cast!(mut Base => Base, &mut ptr);
         assert_eq!(1, num_table_calls.get());
     }
 
     #[test]
     fn test_clone_unstable() {
         let num_table_calls = Cell::new(0);
-        let ptr = DynDynFat::new(Box::new(TestStruct(&num_table_calls, &EMPTY_TABLE_1.1))).clone();
+        let ptr: DynDynFat<dyn Base, _> =
+            DynDynFat::new(Box::new(TestStruct(&num_table_calls, &EMPTY_TABLE_1.1))).clone();
 
         assert_eq!(2, num_table_calls.get());
         assert_eq!(
             &EMPTY_TABLE_1.1[..] as *const _,
-            ptr.get_dyn_dyn_table().traits as *const _
+            DynDynFat::get_dyn_dyn_table(&ptr).traits as *const _
         );
     }
 
     #[test]
     fn test_clone_stable() {
         let num_table_calls = Cell::new(0);
-        let ptr = DynDynFat::new(Rc::new(TestStruct(&num_table_calls, &EMPTY_TABLE_1.1))).clone();
+        let ptr: DynDynFat<dyn Base, _> =
+            DynDynFat::new(Rc::new(TestStruct(&num_table_calls, &EMPTY_TABLE_1.1))).clone();
 
         assert_eq!(1, num_table_calls.get());
         assert_eq!(
             &EMPTY_TABLE_1.1[..] as *const _,
-            ptr.get_dyn_dyn_table().traits as *const _
+            DynDynFat::get_dyn_dyn_table(&ptr).traits as *const _
         );
     }
 
     #[test]
     fn test_clone_changes_table() {
         let num_table_calls = Cell::new(0);
-        let ptr = DynDynFat::new(WeirdCloneBox(Box::new(TestStruct(
+        let ptr: DynDynFat<dyn Base, _> = DynDynFat::new(WeirdCloneBox(Box::new(TestStruct(
             &num_table_calls,
             &EMPTY_TABLE_1.1,
         ))))
@@ -216,7 +237,7 @@ mod test {
         assert_eq!(2, num_table_calls.get());
         assert_eq!(
             &EMPTY_TABLE_2.1[..] as *const _,
-            ptr.get_dyn_dyn_table().traits as *const _
+            DynDynFat::get_dyn_dyn_table(&ptr).traits as *const _
         );
     }
 }

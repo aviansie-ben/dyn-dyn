@@ -88,9 +88,6 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
                     #dyn_dyn::DynDynTableEntry::new::<
                         #self_ty,
                         dyn #convert_tys_1,
-                        dyn #convert_tys_1 + Send,
-                        dyn #convert_tys_1 + Sync,
-                        dyn #convert_tys_1 + Send + Sync,
                         _
                     >(Self::#convert_fns_1)
                 ),*

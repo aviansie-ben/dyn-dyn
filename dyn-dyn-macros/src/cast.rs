@@ -3,145 +3,135 @@ use proc_macro::{Diagnostic, Level};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::spanned::Spanned;
-use syn::{
-    Expr, ExprCast, Lifetime, TraitBound, Type, TypeParamBound, TypeReference, TypeTraitObject,
-};
+use syn::{Expr, Token, TraitBound, TypeParamBound};
+use syn::parse::{Parse, ParseStream};
+use syn::punctuated::Punctuated;
 
-struct DynDynCastInput {
+pub struct DynDynCastInput {
+    mutability: Option<Token![mut]>,
+    base_traits: Punctuated<TypeParamBound, Token![+]>,
+    _arrow: Token![=>],
+    target_traits: Punctuated<TypeParamBound, Token![+]>,
+    _comma: Token![,],
+    expr: Expr
+}
+
+impl Parse for DynDynCastInput {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(DynDynCastInput {
+            mutability: input.parse()?,
+            base_traits: Punctuated::parse_separated_nonempty(input)?,
+            _arrow: input.parse()?,
+            target_traits: Punctuated::parse_separated_nonempty(input)?,
+            _comma: input.parse()?,
+            expr: input.parse()?
+        })
+    }
+}
+
+struct DynDynCastProcessedInput {
     val: Expr,
     is_mut: bool,
-    primary_trait: TraitBound,
-    marker_traits: Vec<TraitBound>,
+    base_primary_trait: TraitBound,
+    base_markers: Vec<TypeParamBound>,
+    tgt_primary_trait: TraitBound,
+    tgt_markers: Vec<TypeParamBound>
 }
 
 #[derive(Debug, Clone, Copy)]
 enum Error {
-    CastToNonTraitObject,
-    NonStaticLifetime,
+    FirstBoundMustBePrimaryTrait
 }
 
-fn is_static_lifetime(lifetime: &Lifetime) -> bool {
-    lifetime.ident.to_string() == "static"
-}
-
-fn parse_input(input: &ExprCast) -> Result<DynDynCastInput, (Span, Error)> {
-    let (mutability, mut elem) = match *input.ty {
-        Type::Reference(TypeReference {
-            mutability,
-            ref elem,
-            ..
-        }) => (mutability, &**elem),
-        _ => {
-            return Err((input.ty.span(), Error::CastToNonTraitObject));
+fn split_trait_bounds(input: &Punctuated<TypeParamBound, Token![+]>) -> Result<(TraitBound, Vec<TypeParamBound>), (Span, Error)> {
+    let primary_trait = match input[0] {
+        TypeParamBound::Trait(ref bound) => bound.clone(),
+        TypeParamBound::Lifetime(_) => {
+            return Err((input[0].span(), Error::FirstBoundMustBePrimaryTrait));
         }
     };
 
-    while let Type::Paren(ref inner) = *elem {
-        elem = &*inner.elem;
-    }
+    Ok((primary_trait, input.iter().skip(1).cloned().collect()))
+}
 
-    let bounds = match *elem {
-        Type::TraitObject(TypeTraitObject { ref bounds, .. }) => bounds,
-        _ => {
-            return Err((input.ty.span(), Error::CastToNonTraitObject));
-        }
-    };
+fn process_input(input: &DynDynCastInput) -> Result<DynDynCastProcessedInput, (Span, Error)> {
+    let (base_primary_trait, base_markers) = split_trait_bounds(&input.base_traits)?;
+    let (tgt_primary_trait, tgt_markers) = split_trait_bounds(&input.target_traits)?;
 
-    let bounds: Result<Vec<_>, _> = bounds
-        .pairs()
-        .filter_map(|pair| {
-            let bound = pair.value();
-
-            match **bound {
-                TypeParamBound::Trait(ref bound) => Some(Ok(bound)),
-                TypeParamBound::Lifetime(ref bound) => {
-                    if is_static_lifetime(bound) {
-                        None
-                    } else {
-                        Some(Err((bound.span(), Error::NonStaticLifetime)))
-                    }
-                }
-            }
-        })
-        .collect();
-    let bounds = bounds?;
-
-    // Remove parentheses around the input expression to avoid falsely triggering the unused_parens lint
-    let val = match *input.expr {
-        Expr::Paren(ref val) => (*val.expr).clone(),
-        ref val => val.clone(),
-    };
-
-    Ok(DynDynCastInput {
-        val,
-        is_mut: mutability.is_some(),
-        primary_trait: bounds[0].clone(),
-        marker_traits: bounds[1..].iter().map(|b| (*b).clone()).collect(),
+    Ok(DynDynCastProcessedInput {
+        val: input.expr.clone(),
+        is_mut: input.mutability.is_some(),
+        base_primary_trait,
+        base_markers,
+        tgt_primary_trait,
+        tgt_markers
     })
 }
 
-pub fn dyn_dyn_cast(input: ExprCast) -> TokenStream {
+pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
     let dyn_dyn = dyn_dyn_crate();
-    let input_parsed = parse_input(&input);
+    let input_parsed = process_input(&input);
 
     match input_parsed {
         Ok(input_parsed) => {
-            let DynDynCastInput {
+            let DynDynCastProcessedInput {
                 val,
                 is_mut,
-                primary_trait,
-                marker_traits,
+                base_primary_trait,
+                base_markers,
+                tgt_primary_trait,
+                tgt_markers
             } = input_parsed;
 
-            let (mut_tok, downcast_method) = if is_mut {
-                (quote!(mut), quote!(try_downcast_mut))
+            let (try_downcast, deref_helper, deref_helper_t) = if is_mut {
+                (quote!(try_downcast_mut), quote!(DerefMutHelper), quote!(DerefMutHelperT))
             } else {
-                (quote!(), quote!(try_downcast))
+                (quote!(try_downcast), quote!(DerefHelper), quote!(DerefHelperT))
             };
 
-            let check_markers = if let &[ref first_marker, ref other_markers @ ..] =
-                &marker_traits[..]
-            {
-                quote!({
-                    fn __dyn_dyn_marker_check(_: &(impl #first_marker #(+ #other_markers)* + ?Sized)) {}
-                    __dyn_dyn_marker_check(__dyn_dyn_input);
-                })
+            let check_markers = if !tgt_markers.is_empty() || !base_markers.is_empty() {
+                quote!(
+                    if false {
+                        fn __dyn_dyn_marker_check(
+                            r: &(impl ?Sized + #base_primary_trait #(+ #base_markers)*)
+                        ) -> &(impl ?Sized + #base_primary_trait #(+ #tgt_markers)*) { r }
+
+                        __dyn_dyn_marker_check(__dyn_dyn_input.__dyn_dyn_deref_typecheck());
+                    }
+                )
             } else {
                 quote!()
             };
 
-            quote!({
-                let __dyn_dyn_input = #val;
+            quote!((|__dyn_dyn_input| {
+                unsafe {
+                    #dyn_dyn::internal::#try_downcast::<dyn #base_primary_trait, dyn #tgt_primary_trait, _>(__dyn_dyn_input, |p| p as *mut (dyn #tgt_primary_trait #(+ #tgt_markers)*))
+                }
+            })({
+                let __dyn_dyn_input = #dyn_dyn::internal::#deref_helper::<dyn #base_primary_trait, _>::new(#val);
 
-                #check_markers
+                {
+                    use #dyn_dyn::internal::#deref_helper_t;
 
-                ::core::option::Option::map(
-                    #dyn_dyn::DynDyn::#downcast_method::<dyn #primary_trait>(__dyn_dyn_input),
-                    |__dyn_dyn_result| unsafe {
-                        & #mut_tok *(
-                            __dyn_dyn_result
-                                as *const dyn #primary_trait
-                                as *mut dyn #primary_trait
-                                as *mut (dyn #primary_trait #(+ #marker_traits)*)
-                        )
-                    }
-                )
-            })
+                    let __dyn_dyn_input = __dyn_dyn_input.__dyn_dyn_check_ref().__dyn_dyn_check_fat();
+
+                    #check_markers
+
+                    __dyn_dyn_input.__dyn_dyn_deref()
+                }
+            }))
         }
         Err((span, err)) => {
             let err = match err {
-                Error::CastToNonTraitObject => {
-                    "Dyn-dyn cast should target a reference to a trait object"
-                }
-                Error::NonStaticLifetime => {
-                    "Dyn-dyn cast bounds cannot include non-static lifetimes"
+                Error::FirstBoundMustBePrimaryTrait => {
+                    "First bound must be the primary trait"
                 }
             };
 
             Diagnostic::spanned(span.unwrap(), Level::Error, err).emit();
 
-            let ty = &input.ty;
-            quote! { (None as Option<#ty>) }
+            let DynDynCastInput { mutability, target_traits, .. } = input;
+            quote! { (None as ::core::option::Option<&#mutability (dyn #target_traits)>) }
         }
     }
 }

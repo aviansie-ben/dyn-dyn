@@ -20,15 +20,17 @@ impl TestTrait for TestStruct {
 fn test_plain_dyn_from_send_sync() {
     assert_eq!(
         Some(0xdeadbeef),
-        dyn_dyn_cast!((&TestStruct as &(dyn BaseTrait + Send)) as &dyn TestTrait).map(|t| t.test())
+        dyn_dyn_cast!(BaseTrait + Send => TestTrait, &TestStruct as &(dyn BaseTrait + Send))
+            .map(|t| t.test())
     );
     assert_eq!(
         Some(0xdeadbeef),
-        dyn_dyn_cast!((&TestStruct as &(dyn BaseTrait + Sync)) as &dyn TestTrait).map(|t| t.test())
+        dyn_dyn_cast!(BaseTrait + Sync => TestTrait, &TestStruct as &(dyn BaseTrait + Sync))
+            .map(|t| t.test())
     );
     assert_eq!(
         Some(0xdeadbeef),
-        dyn_dyn_cast!((&TestStruct as &(dyn BaseTrait + Send + Sync)) as &dyn TestTrait)
+        dyn_dyn_cast!(BaseTrait + Send + Sync => TestTrait, &TestStruct as &(dyn BaseTrait + Send + Sync))
             .map(|t| t.test())
     );
 }
@@ -37,12 +39,12 @@ fn test_plain_dyn_from_send_sync() {
 fn test_send_dyn() {
     assert_eq!(
         Some(0xdeadbeef),
-        dyn_dyn_cast!((&TestStruct as &(dyn BaseTrait + Send)) as &(dyn TestTrait + Send))
+        dyn_dyn_cast!(BaseTrait + Send => TestTrait + Send, &TestStruct as &(dyn BaseTrait + Send))
             .map(|t| t.test())
     );
     assert_eq!(
         Some(0xdeadbeef),
-        dyn_dyn_cast!((&TestStruct as &(dyn BaseTrait + Send + Sync)) as &(dyn TestTrait + Send))
+        dyn_dyn_cast!(BaseTrait + Send + Sync => TestTrait + Send, &TestStruct as &(dyn BaseTrait + Send + Sync))
             .map(|t| t.test())
     );
 }
@@ -51,12 +53,12 @@ fn test_send_dyn() {
 fn test_sync_dyn() {
     assert_eq!(
         Some(0xdeadbeef),
-        dyn_dyn_cast!((&TestStruct as &(dyn BaseTrait + Sync)) as &(dyn TestTrait + Sync))
+        dyn_dyn_cast!(BaseTrait + Sync => TestTrait + Sync, &TestStruct as &(dyn BaseTrait + Sync))
             .map(|t| t.test())
     );
     assert_eq!(
         Some(0xdeadbeef),
-        dyn_dyn_cast!((&TestStruct as &(dyn BaseTrait + Send + Sync)) as &(dyn TestTrait + Sync))
+        dyn_dyn_cast!(BaseTrait + Send + Sync => TestTrait + Sync, &TestStruct as &(dyn BaseTrait + Send + Sync))
             .map(|t| t.test())
     );
 }
@@ -66,7 +68,8 @@ fn test_send_sync_dyn() {
     assert_eq!(
         Some(0xdeadbeef),
         dyn_dyn_cast!(
-            (&TestStruct as &(dyn BaseTrait + Send + Sync)) as &(dyn TestTrait + Send + Sync)
+            BaseTrait + Send + Sync => TestTrait + Send + Sync,
+            &TestStruct as &(dyn BaseTrait + Send + Sync)
         )
         .map(|t| t.test())
     );
