@@ -1,0 +1,104 @@
+name: Build & Test
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  linux_check:
+    name: Check (Linux x86-64)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          profile: minimal
+          components: clippy
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: true
+
+      - name: Check (all features)
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --all-features --tests
+
+      - name: Check (no_std)
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --no-default-features --features dynamic-names --tests
+
+      - name: Check (no_std with alloc)
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --no-default-features --features alloc,dynamic-names --tests
+
+      - name: Run clippy
+        uses: actions-rs/clippy-check@v1
+        continue-on-error: true
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-targets --all-features --tests
+
+  linux_test_miri:
+    name: Test (Linux x86-64 w/ Miri)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          profile: minimal
+          components: miri
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: true
+
+      - name: Setup Miri
+        uses: actions-rs/cargo@v1
+        with:
+          command: miri
+          args: setup
+
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: miri
+          args: test
+
+  fmt:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          profile: minimal
+          components: rustfmt
+
+      - name: Check formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all --check
