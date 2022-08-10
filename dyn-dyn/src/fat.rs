@@ -134,11 +134,11 @@ impl<B: ?Sized + DynDynBase, P: Deref + Copy> Copy for DynDynFat<B, P> where P::
 #[cfg(test)]
 mod test {
     use crate::{DynDynBase, DynDynFat, DynDynTable, DynDynTableEntry};
+    use dyn_dyn_macros::dyn_dyn_cast;
     use stable_deref_trait::StableDeref;
     use std::cell::Cell;
     use std::ops::Deref;
     use std::rc::Rc;
-    use dyn_dyn_macros::dyn_dyn_cast;
 
     // We need the pointers to these two tables to be distinct in order to properly differentiate them, so these cannot be declared as
     // statics with ZSTs.

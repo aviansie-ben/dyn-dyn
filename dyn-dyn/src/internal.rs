@@ -53,13 +53,19 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DerefHelper<'a, B, T> {
     }
 }
 
-impl<'a, B: ?Sized + DynDynBase, P: Deref> DerefHelper<'a, B, DynDynFat<B, P>> where P::Target: Unsize<B> {
+impl<'a, B: ?Sized + DynDynBase, P: Deref> DerefHelper<'a, B, DynDynFat<B, P>>
+where
+    P::Target: Unsize<B>,
+{
     pub fn __dyn_dyn_check_fat(self) -> DerefHelperFat<'a, B, P> {
         DerefHelperFat(self.0, self.1)
     }
 }
 
-pub struct DerefHelperRef<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>>(&'a T, PhantomData<fn(B) -> B>);
+pub struct DerefHelperRef<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>>(
+    &'a T,
+    PhantomData<fn(B) -> B>,
+);
 
 impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DerefHelperRef<'a, B, T> {
     pub fn __dyn_dyn_check_fat(self) -> Self {
@@ -76,9 +82,17 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DerefHelperRef<'a, B, T>
     }
 }
 
-pub struct DerefHelperFat<'a, B: ?Sized + DynDynBase, P: Deref>(&'a DynDynFat<B, P>, PhantomData<fn(B) -> B>) where P::Target: Unsize<B>;
+pub struct DerefHelperFat<'a, B: ?Sized + DynDynBase, P: Deref>(
+    &'a DynDynFat<B, P>,
+    PhantomData<fn(B) -> B>,
+)
+where
+    P::Target: Unsize<B>;
 
-impl<'a, B: ?Sized + DynDynBase, P: Deref> DerefHelperFat<'a, B, P> where P::Target: Unsize<B> {
+impl<'a, B: ?Sized + DynDynBase, P: Deref> DerefHelperFat<'a, B, P>
+where
+    P::Target: Unsize<B>,
+{
     pub fn __dyn_dyn_deref(self) -> (&'a B, DynDynTable) {
         let table = DynDynFat::get_dyn_dyn_table(self.0);
         (&**self.0, table)
@@ -104,7 +118,10 @@ pub trait DerefMutHelperT<'a, 'b, B: ?Sized + DynDynBase, T: ?Sized + DynDyn<'b,
     fn __dyn_dyn_check_fat(self) -> Self;
 }
 
-pub struct DerefMutHelper<'a, B: ?Sized + DynDynBase, T: ?Sized>(&'a mut T, PhantomData<fn(B) -> B>);
+pub struct DerefMutHelper<'a, B: ?Sized + DynDynBase, T: ?Sized>(
+    &'a mut T,
+    PhantomData<fn(B) -> B>,
+);
 
 impl<'a, B: ?Sized + DynDynBase, T: ?Sized> DerefMutHelper<'a, B, T> {
     pub fn new(val: &'a mut T) -> Self {
@@ -124,7 +141,7 @@ impl<'a, 'b, B: ?Sized + DynDynBase, T: ?Sized + DynDynMut<'b, B>> DerefMutHelpe
 }
 
 impl<'a, 'b, B: ?Sized + DynDynBase, T: ?Sized + DynDyn<'b, B>> DerefMutHelperT<'a, 'b, B, T>
-for DerefMutHelper<'a, B, T>
+    for DerefMutHelper<'a, B, T>
 {
     fn __dyn_dyn_check_ref(self) -> Self {
         self
@@ -141,13 +158,19 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DerefMutHelper<'a, B, T>
     }
 }
 
-impl<'a, B: ?Sized + DynDynBase, P: Deref> DerefMutHelper<'a, B, DynDynFat<B, P>> where P::Target: Unsize<B> {
+impl<'a, B: ?Sized + DynDynBase, P: Deref> DerefMutHelper<'a, B, DynDynFat<B, P>>
+where
+    P::Target: Unsize<B>,
+{
     pub fn __dyn_dyn_check_fat(self) -> DerefMutHelperFat<'a, B, P> {
         DerefMutHelperFat(self.0, self.1)
     }
 }
 
-pub struct DerefMutHelperRef<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>>(&'a mut T, PhantomData<fn(B) -> B>);
+pub struct DerefMutHelperRef<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>>(
+    &'a mut T,
+    PhantomData<fn(B) -> B>,
+);
 
 impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DerefMutHelperRef<'a, B, T> {
     pub fn __dyn_dyn_check_fat(self) -> Self {
@@ -164,9 +187,17 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DerefMutHelperRef<'a, B,
     }
 }
 
-pub struct DerefMutHelperFat<'a, B: ?Sized + DynDynBase, P: Deref>(&'a mut DynDynFat<B, P>, PhantomData<fn(B) -> B>) where P::Target: Unsize<B>;
+pub struct DerefMutHelperFat<'a, B: ?Sized + DynDynBase, P: Deref>(
+    &'a mut DynDynFat<B, P>,
+    PhantomData<fn(B) -> B>,
+)
+where
+    P::Target: Unsize<B>;
 
-impl<'a, B: ?Sized + DynDynBase, P: DerefMut> DerefMutHelperFat<'a, B, P> where P::Target: Unsize<B> {
+impl<'a, B: ?Sized + DynDynBase, P: DerefMut> DerefMutHelperFat<'a, B, P>
+where
+    P::Target: Unsize<B>,
+{
     pub fn __dyn_dyn_deref(self) -> (&'a mut B, DynDynTable) {
         let table = DynDynFat::get_dyn_dyn_table(self.0);
         (&mut **self.0, table)
