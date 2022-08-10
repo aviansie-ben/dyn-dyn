@@ -2,10 +2,10 @@ use crate::util::dyn_dyn_crate;
 use proc_macro::{Diagnostic, Level};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::spanned::Spanned;
-use syn::{Expr, Token, TraitBound, TypeParamBound};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
+use syn::spanned::Spanned;
+use syn::{Expr, Token, TraitBound, TypeParamBound};
 
 pub struct DynDynCastInput {
     mutability: Option<Token![mut]>,
@@ -13,7 +13,7 @@ pub struct DynDynCastInput {
     _arrow: Token![=>],
     target_traits: Punctuated<TypeParamBound, Token![+]>,
     _comma: Token![,],
-    expr: Expr
+    expr: Expr,
 }
 
 impl Parse for DynDynCastInput {
@@ -24,7 +24,7 @@ impl Parse for DynDynCastInput {
             _arrow: input.parse()?,
             target_traits: Punctuated::parse_separated_nonempty(input)?,
             _comma: input.parse()?,
-            expr: input.parse()?
+            expr: input.parse()?,
         })
     }
 }
@@ -35,15 +35,17 @@ struct DynDynCastProcessedInput {
     base_primary_trait: TraitBound,
     base_markers: Vec<TypeParamBound>,
     tgt_primary_trait: TraitBound,
-    tgt_markers: Vec<TypeParamBound>
+    tgt_markers: Vec<TypeParamBound>,
 }
 
 #[derive(Debug, Clone, Copy)]
 enum Error {
-    FirstBoundMustBePrimaryTrait
+    FirstBoundMustBePrimaryTrait,
 }
 
-fn split_trait_bounds(input: &Punctuated<TypeParamBound, Token![+]>) -> Result<(TraitBound, Vec<TypeParamBound>), (Span, Error)> {
+fn split_trait_bounds(
+    input: &Punctuated<TypeParamBound, Token![+]>,
+) -> Result<(TraitBound, Vec<TypeParamBound>), (Span, Error)> {
     let primary_trait = match input[0] {
         TypeParamBound::Trait(ref bound) => bound.clone(),
         TypeParamBound::Lifetime(_) => {
@@ -64,7 +66,7 @@ fn process_input(input: &DynDynCastInput) -> Result<DynDynCastProcessedInput, (S
         base_primary_trait,
         base_markers,
         tgt_primary_trait,
-        tgt_markers
+        tgt_markers,
     })
 }
 
@@ -80,13 +82,21 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                 base_primary_trait,
                 base_markers,
                 tgt_primary_trait,
-                tgt_markers
+                tgt_markers,
             } = input_parsed;
 
             let (try_downcast, deref_helper, deref_helper_t) = if is_mut {
-                (quote!(try_downcast_mut), quote!(DerefMutHelper), quote!(DerefMutHelperT))
+                (
+                    quote!(try_downcast_mut),
+                    quote!(DerefMutHelper),
+                    quote!(DerefMutHelperT),
+                )
             } else {
-                (quote!(try_downcast), quote!(DerefHelper), quote!(DerefHelperT))
+                (
+                    quote!(try_downcast),
+                    quote!(DerefHelper),
+                    quote!(DerefHelperT),
+                )
             };
 
             let check_markers = if !tgt_markers.is_empty() || !base_markers.is_empty() {
@@ -123,14 +133,16 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
         }
         Err((span, err)) => {
             let err = match err {
-                Error::FirstBoundMustBePrimaryTrait => {
-                    "First bound must be the primary trait"
-                }
+                Error::FirstBoundMustBePrimaryTrait => "First bound must be the primary trait",
             };
 
             Diagnostic::spanned(span.unwrap(), Level::Error, err).emit();
 
-            let DynDynCastInput { mutability, target_traits, .. } = input;
+            let DynDynCastInput {
+                mutability,
+                target_traits,
+                ..
+            } = input;
             quote! { (None as ::core::option::Option<&#mutability (dyn #target_traits)>) }
         }
     }

@@ -2,10 +2,10 @@
 
 extern crate proc_macro;
 
+use crate::cast::DynDynCastInput;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::{parse_macro_input, ItemImpl, ItemTrait, Token, Type};
-use crate::cast::DynDynCastInput;
 
 mod base;
 mod cast;
