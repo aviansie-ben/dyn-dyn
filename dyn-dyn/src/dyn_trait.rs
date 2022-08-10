@@ -23,7 +23,7 @@ cfg_if! {
         type TypeName = &'static str;
 
         const fn type_name<T: ?Sized>() -> TypeName {
-            std::any::type_name::<T>()
+            core::any::type_name::<T>()
         }
     } else {
         #[derive(Debug, Clone, Copy)]
