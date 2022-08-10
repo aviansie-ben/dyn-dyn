@@ -1,8 +1,8 @@
 use crate::{DynDyn, DynDynBase, DynDynTable, StableDynDyn};
+use core::marker::{PhantomData, Unsize};
+use core::ops::{Deref, DerefMut};
+use core::ptr;
 use stable_deref_trait::{CloneStableDeref, StableDeref};
-use std::marker::{PhantomData, Unsize};
-use std::ops::{Deref, DerefMut};
-use std::ptr;
 
 #[derive(Debug)]
 pub struct DynDynFat<B: ?Sized + DynDynBase, P: Deref>
@@ -131,14 +131,15 @@ where
 
 impl<B: ?Sized + DynDynBase, P: Deref + Copy> Copy for DynDynFat<B, P> where P::Target: Unsize<B> {}
 
-#[cfg(test)]
+#[cfg(all(test, feature = "alloc"))]
 mod test {
     use crate::{DynDynBase, DynDynFat, DynDynTable, DynDynTableEntry};
+    use alloc::boxed::Box;
+    use alloc::rc::Rc;
+    use core::cell::Cell;
+    use core::ops::Deref;
     use dyn_dyn_macros::dyn_dyn_cast;
     use stable_deref_trait::StableDeref;
-    use std::cell::Cell;
-    use std::ops::Deref;
-    use std::rc::Rc;
 
     // We need the pointers to these two tables to be distinct in order to properly differentiate them, so these cannot be declared as
     // statics with ZSTs.

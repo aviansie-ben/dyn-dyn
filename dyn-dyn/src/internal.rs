@@ -1,7 +1,7 @@
 use crate::{DynDyn, DynDynFat, DynDynMut, DynDynTable, DynTrait};
-use std::marker::{PhantomData, Unsize};
-use std::ops::{Deref, DerefMut};
-use std::ptr::NonNull;
+use core::marker::{PhantomData, Unsize};
+use core::ops::{Deref, DerefMut};
+use core::ptr::NonNull;
 
 pub unsafe trait DynDynDerived<B: ?Sized + DynDynBase> {
     fn get_dyn_dyn_table(&self) -> DynDynTable;

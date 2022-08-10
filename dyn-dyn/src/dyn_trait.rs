@@ -1,7 +1,7 @@
 use cfg_if::cfg_if;
-use std::any::TypeId;
-use std::ptr::{DynMetadata, NonNull, Pointee};
-use std::{mem, ptr};
+use core::any::TypeId;
+use core::ptr::{DynMetadata, NonNull, Pointee};
+use core::{mem, ptr};
 
 #[derive(Debug, Clone, Copy)]
 pub struct AnyDynMetadata(DynMetadata<()>);
@@ -81,7 +81,7 @@ impl<T: Pointee<Metadata = DynMetadata<T>> + ?Sized + 'static> const DynTrait fo
 }
 
 mod private {
-    use std::ptr::{DynMetadata, Pointee};
+    use core::ptr::{DynMetadata, Pointee};
 
     pub trait Sealed {}
 

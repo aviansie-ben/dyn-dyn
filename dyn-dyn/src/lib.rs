@@ -1,3 +1,4 @@
+#![cfg_attr(not(std), no_std)]
 #![feature(const_convert)]
 #![feature(const_nonnull_new)]
 #![feature(const_option)]
@@ -7,6 +8,9 @@
 #![feature(ptr_metadata)]
 #![feature(unsize)]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 mod dyn_trait;
 mod fat;
 
@@ -15,11 +19,11 @@ pub use fat::DynDynFat;
 #[doc(hidden)]
 pub mod internal;
 
+use core::any::TypeId;
+use core::marker::Unsize;
+use core::ops::{Deref, DerefMut};
+use core::ptr::NonNull;
 use stable_deref_trait::StableDeref;
-use std::any::TypeId;
-use std::marker::Unsize;
-use std::ops::{Deref, DerefMut};
-use std::ptr::NonNull;
 
 use crate::dyn_trait::{AnyDynMetadata, DynTrait};
 pub use dyn_trait::DynInfo;
