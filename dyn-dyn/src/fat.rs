@@ -178,7 +178,7 @@ mod test {
     impl<'a> Deref for WeirdCloneBox<'a> {
         type Target = TestStruct<'a>;
         fn deref(&self) -> &Self::Target {
-            &*self.0
+            &self.0
         }
     }
 
