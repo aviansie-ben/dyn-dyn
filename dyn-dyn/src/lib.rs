@@ -26,8 +26,7 @@ use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 use stable_deref_trait::StableDeref;
 
-use crate::dyn_trait::{AnyDynMetadata, DynTrait};
-pub use dyn_trait::DynInfo;
+use crate::dyn_trait::{AnyDynMetadata, DynInfo, DynTrait};
 use internal::*;
 
 #[derive(Debug)]
@@ -49,6 +48,15 @@ impl DynDynTableEntry {
             ty: DynInfo::of::<D>(),
             meta: D::meta_for_ty(f),
         }
+    }
+
+    pub fn type_id(&self) -> TypeId {
+        self.ty.type_id()
+    }
+
+    #[cfg(feature = "dynamic-names")]
+    pub fn type_name(&self) -> &'static str {
+        self.ty.name()
     }
 }
 
@@ -73,6 +81,25 @@ impl DynDynTable {
     #[doc(hidden)]
     pub const fn new(traits: &'static [DynDynTableEntry]) -> DynDynTable {
         DynDynTable { traits }
+    }
+}
+
+impl IntoIterator for DynDynTable {
+    type Item = &'static DynDynTableEntry;
+    type IntoIter = DynDynTableIterator;
+
+    fn into_iter(self) -> Self::IntoIter {
+        DynDynTableIterator(self.traits.iter())
+    }
+}
+
+pub struct DynDynTableIterator(core::slice::Iter<'static, DynDynTableEntry>);
+
+impl Iterator for DynDynTableIterator {
+    type Item = &'static DynDynTableEntry;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
     }
 }
 

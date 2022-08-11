@@ -34,7 +34,7 @@ cfg_if! {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct DynInfo(TypeId, TypeName);
+pub(crate) struct DynInfo(TypeId, TypeName);
 
 impl DynInfo {
     pub const fn of<T: 'static + ?Sized>() -> DynInfo {
