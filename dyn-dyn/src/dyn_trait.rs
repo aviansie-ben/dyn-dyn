@@ -14,6 +14,10 @@ impl AnyDynMetadata {
 
 impl<T: ?Sized> const From<DynMetadata<T>> for AnyDynMetadata {
     fn from(meta: DynMetadata<T>) -> Self {
+        // SAFETY: There are no invalid values for *const (), so transmuting to it should never cause UB if DynMetadata<T> is of the same
+        //         size. The only valid usage of this *const () is then to transmute it back to DynMetadata<T>. While this definitely makes
+        //         assumptions about how the standard library implements DynMetadata (which is unfortunate), we should fail to compile if
+        //         that changes rather than invoking UB.
         unsafe { AnyDynMetadata(mem::transmute(meta)) }
     }
 }

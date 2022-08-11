@@ -82,6 +82,8 @@ where
     /// Creates a new fat pointer wrapping the provided pointer. This will immediately dereference the provided pointer to get the
     /// referenced object's [`DynDynTable`].
     pub fn new(ptr: P) -> Self {
+        // SAFETY: Since the provided pointer implements StableDeref, it must always dereference to the same object whose concrete type
+        //         cannot change for the life of this fat pointer.
         unsafe { Self::new_unchecked(ptr) }
     }
 }
@@ -116,10 +118,14 @@ where
     }
 }
 
+// SAFETY: DynDynFat implements deref() by dereferencing the wrapped pointer, so if that pointer is StableDeref then so is the DynDynFat
 unsafe impl<B: ?Sized + DynDynBase, P: StableDeref> StableDeref for DynDynFat<B, P> where
     P::Target: Unsize<B>
 {
 }
+
+// SAFETY: DynDynFat implements clone() by cloning the wrapped pointer and implements deref() by dereferencing the wrapped pointer, so if
+//         that pointer is CloneStableDeref then so is the DynDynFat
 unsafe impl<B: ?Sized + DynDynBase, P: CloneStableDeref> CloneStableDeref for DynDynFat<B, P> where
     P::Target: Unsize<B>
 {

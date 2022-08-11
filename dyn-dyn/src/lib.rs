@@ -1,6 +1,7 @@
 #![doc = include_str!("../../README.md")]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(missing_docs)]
+#![warn(clippy::undocumented_unsafe_blocks)]
 #![feature(const_convert)]
 #![feature(const_nonnull_new)]
 #![feature(const_option)]
@@ -125,6 +126,7 @@ pub unsafe trait DynDyn<'a, B: ?Sized + DynDynBase>: Deref {
     fn deref_dyn_dyn(&self) -> (&B, DynDynTable);
 }
 
+// SAFETY: The DynDynTable returned comes from calling get_dyn_dyn_table on the returned reference.
 unsafe impl<'a, B: ?Sized + DynDynBase, T: Deref> DynDyn<'a, B> for T
 where
     T::Target: Unsize<B> + 'a,
@@ -150,6 +152,7 @@ pub unsafe trait DynDynMut<'a, B: ?Sized + DynDynBase>: DynDyn<'a, B> + DerefMut
     fn deref_mut_dyn_dyn(&mut self) -> (&mut B, DynDynTable);
 }
 
+// SAFETY: The DynDynTable returned comes from calling get_dyn_dyn_table on the returned mutable reference.
 unsafe impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B> + DerefMut> DynDynMut<'a, B> for T
 where
     T::Target: Unsize<B> + 'a,
@@ -173,4 +176,7 @@ where
 /// returned by [`DynDyn::deref_dyn_dyn`].
 pub unsafe trait StableDynDyn<'a, B: ?Sized + DynDynBase>: DynDyn<'a, B> {}
 
+// SAFETY: Since the pointer itself must be stable, the underlying type of the pointee cannot change. Since the tables returned by the
+//         DynDyn and DynDynMut implementations must have come from dereferencing the pointer, it follows that these tables should also be
+//         stable.
 unsafe impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B> + StableDeref> StableDynDyn<'a, B> for T {}
