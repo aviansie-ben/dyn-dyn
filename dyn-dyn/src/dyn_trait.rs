@@ -4,7 +4,7 @@ use core::ptr::{DynMetadata, NonNull, Pointee};
 use core::{mem, ptr};
 
 #[derive(Debug, Clone, Copy)]
-pub struct AnyDynMetadata(DynMetadata<()>);
+pub struct AnyDynMetadata(*const ());
 
 impl AnyDynMetadata {
     pub const unsafe fn downcast<T: DynTrait + ?Sized>(self) -> DynMetadata<T> {
