@@ -1,4 +1,4 @@
-use dyn_dyn_macros::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_derived};
+use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_derived};
 
 #[test]
 fn test_generic_base() {
