@@ -3,6 +3,7 @@ use core::marker::{PhantomData, Unsize};
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 
+#[allow(clippy::missing_safety_doc)] // This module is marked doc(hidden)
 pub unsafe trait DynDynDerived<B: ?Sized + DynDynBase> {
     fn get_dyn_dyn_table(&self) -> DynDynTable;
 }

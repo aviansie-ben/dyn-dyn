@@ -4,6 +4,11 @@ use core::ops::{Deref, DerefMut};
 use core::ptr;
 use stable_deref_trait::{CloneStableDeref, StableDeref};
 
+/// A fat pointer to an object that can be downcast via the base trait object `B`.
+///
+/// Such a pointer will only perform a call to retrieve the [`DynDynTable`] of the referenced object once when created. Thereafter, the
+/// cached table will be used for trait object metadata lookups. This effectively avoids the overhead of the repeated indirect calls to
+/// retrieve the table at the cost of increasing the size of the pointer to the object.
 #[derive(Debug)]
 pub struct DynDynFat<B: ?Sized + DynDynBase, P: Deref>
 where
@@ -18,6 +23,14 @@ impl<B: ?Sized + DynDynBase, P: Deref> DynDynFat<B, P>
 where
     P::Target: Unsize<B>,
 {
+    /// Creates a new fat pointer wrapping the provided pointer. This will immediately dereference the provided pointer to get the
+    /// referenced object's [`DynDynTable`].
+    ///
+    /// # Safety
+    ///
+    /// The caller must guarantee that as long as this fat pointer is live, `ptr` will dereference to an object of the same concrete type.
+    /// Additionally, if this fat pointer is cloned, the same guarantee must apply to the result of `ptr.clone()` for the lifespan of the
+    /// cloned fat pointer.
     pub unsafe fn new_unchecked(ptr: P) -> Self {
         let table = DynDyn::<B>::deref_dyn_dyn(&ptr).1;
 
@@ -28,6 +41,7 @@ where
         }
     }
 
+    /// Dereferences a fat pointer to produce a fat pointer with a reference.
     pub fn deref_fat(ptr: &Self) -> DynDynFat<B, &P::Target> {
         DynDynFat {
             ptr: ptr.ptr.deref(),
@@ -36,10 +50,12 @@ where
         }
     }
 
+    /// Unwraps a fat pointer, returning the pointer originally used to construct it.
     pub fn unwrap(ptr: Self) -> P {
         ptr.ptr
     }
 
+    /// Gets the [`DynDynTable`] of the object referenced by a fat pointer without dereferencing it.
     pub fn get_dyn_dyn_table(ptr: &Self) -> DynDynTable {
         ptr.table
     }
@@ -49,6 +65,7 @@ impl<B: ?Sized + DynDynBase, P: DerefMut> DynDynFat<B, P>
 where
     P::Target: Unsize<B>,
 {
+    /// Dereferences a fat pointer to produce a fat pointer with a mutable reference.
     pub fn deref_mut_fat(ptr: &mut Self) -> DynDynFat<B, &mut P::Target> {
         DynDynFat {
             ptr: ptr.ptr.deref_mut(),
@@ -62,6 +79,8 @@ impl<'a, B: ?Sized + DynDynBase, P: Deref + StableDynDyn<'a, B>> DynDynFat<B, P>
 where
     P::Target: Unsize<B>,
 {
+    /// Creates a new fat pointer wrapping the provided pointer. This will immediately dereference the provided pointer to get the
+    /// referenced object's [`DynDynTable`].
     pub fn new(ptr: P) -> Self {
         unsafe { Self::new_unchecked(ptr) }
     }
@@ -71,6 +90,12 @@ impl<B: ?Sized + DynDynBase, P: Deref + Clone> DynDynFat<B, P>
 where
     P::Target: Unsize<B>,
 {
+    /// Clones a fat pointer without verifying that the [`DynDynTable`] held by the new fat pointer is applicable to the cloned pointer.
+    ///
+    /// # Safety
+    ///
+    /// The caller must guarantee that the result of calling `ptr.clone()` will dereference to an object having the same concrete type as
+    /// that pointed to by `ptr`.
     pub unsafe fn clone_unchecked(ptr: &Self) -> Self {
         DynDynFat {
             ptr: ptr.ptr.clone(),
