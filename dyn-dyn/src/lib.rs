@@ -75,9 +75,7 @@ impl DynDynTable {
     }
 }
 
-pub unsafe trait DynDyn<'a, B: ?Sized + DynDynBase> {
-    type DerefTarget: ?Sized;
-
+pub unsafe trait DynDyn<'a, B: ?Sized + DynDynBase>: Deref {
     fn deref_dyn_dyn(&self) -> (&B, DynDynTable);
 }
 
@@ -85,8 +83,6 @@ unsafe impl<'a, B: ?Sized + DynDynBase, T: Deref> DynDyn<'a, B> for T
 where
     T::Target: Unsize<B> + 'a,
 {
-    type DerefTarget = T::Target;
-
     #[inline]
     fn deref_dyn_dyn(&self) -> (&B, DynDynTable) {
         let tgt = &**self;
@@ -96,7 +92,7 @@ where
     }
 }
 
-pub unsafe trait DynDynMut<'a, B: ?Sized + DynDynBase>: DynDyn<'a, B> {
+pub unsafe trait DynDynMut<'a, B: ?Sized + DynDynBase>: DynDyn<'a, B> + DerefMut {
     fn deref_mut_dyn_dyn(&mut self) -> (&mut B, DynDynTable);
 }
 

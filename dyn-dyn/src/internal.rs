@@ -30,7 +30,7 @@ impl<'a, 'b, B: ?Sized + DynDynBase, T: ?Sized + DynDyn<'b, B>> DerefHelper<'a, 
         (ptr, table)
     }
 
-    pub fn __dyn_dyn_deref_typecheck(&self) -> &'static T::DerefTarget {
+    pub fn __dyn_dyn_deref_typecheck(&self) -> &'static T::Target {
         panic!("this method is only meant to be used for typechecking and should never be called")
     }
 }
@@ -135,7 +135,7 @@ impl<'a, 'b, B: ?Sized + DynDynBase, T: ?Sized + DynDynMut<'b, B>> DerefMutHelpe
         (ptr, table)
     }
 
-    pub fn __dyn_dyn_deref_typecheck(&self) -> &'static T::DerefTarget {
+    pub fn __dyn_dyn_deref_typecheck(&self) -> &'static T::Target {
         panic!("this method is only meant to be used for typechecking and should never be called")
     }
 }
