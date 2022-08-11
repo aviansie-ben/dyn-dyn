@@ -22,6 +22,12 @@ impl<T: ?Sized> const From<DynMetadata<T>> for AnyDynMetadata {
     }
 }
 
+// SAFETY: Since DynMetadata<T>: Send for all T, AnyDynMetadata should also be Send
+unsafe impl Send for AnyDynMetadata {}
+
+// SAFETY: Since DynMetadata<T>: Sync for all T, AnyDynMetadata should also be Sync
+unsafe impl Sync for AnyDynMetadata {}
+
 cfg_if! {
     if #[cfg(feature = "dynamic-names")] {
         type TypeName = &'static str;
