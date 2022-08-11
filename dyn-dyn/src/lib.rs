@@ -1,3 +1,4 @@
+#![doc = include_str!("../../README.md")]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(const_convert)]
 #![feature(const_nonnull_new)]
