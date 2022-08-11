@@ -1,6 +1,7 @@
 //! This crate provides procedural macros meant to be used with the `dyn-dyn` crate. This crate should not be depended upon directly:
 //! instead, the versions of these macros re-exported from the `dyn-dyn` crate itself should be used.
 
+#![forbid(unsafe_code)]
 #![feature(proc_macro_diagnostic)]
 
 extern crate proc_macro;
