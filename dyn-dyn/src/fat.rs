@@ -212,6 +212,7 @@ mod test {
         }
     }
 
+    // SAFETY: Just a wrapper around Box<TestStruct<'a>>
     unsafe impl<'a> StableDeref for WeirdCloneBox<'a> {}
 
     #[test]
