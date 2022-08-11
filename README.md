@@ -6,7 +6,7 @@
 
 `dyn-dyn` is used by declaring a "base trait" annotated with the `#[dyn_dyn_base]` attribute macro and annotating any `impl` blocks for that trait using the `#[dyn_dyn_derived(...)]` attribute macro, like so:
 
-```rust
+```rust,ignore
 #[dyn_dyn_base]
 trait BaseTrait {}
 trait ExposedTrait {}
@@ -21,7 +21,7 @@ impl BaseTrait for Struct {}
 
 A reference to the trait object `&dyn BaseTrait` can then be downcast to any other trait object listed in the arguments of the `#[dyn_dyn_derived(...)]` attribute by using the `dyn_dyn_cast!` macro:
 
-```rust
+```rust,ignore
 let _: Option<&dyn ExposedTrait> = dyn_dyn_cast!(BaseTrait => ExposedTrait, &TestStruct as &dyn BaseTrait);
 let _: Option<&mut dyn ExposedTrait> = dyn_dyn_cast!(mut BaseTrait => ExposedTrait, &mut TestStruct as &mut dyn BaseTrait);
 ```
