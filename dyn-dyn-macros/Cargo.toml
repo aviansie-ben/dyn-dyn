@@ -1,5 +1,6 @@
 [package]
 name = "dyn-dyn-macros"
+license = "MIT OR Apache-2.0"
 version = "0.1.0"
 authors = ["Benjamin Thomas <ben@benthomas.ca>"]
 edition = "2021"
