@@ -1,4 +1,4 @@
-use crate::{DynDyn, DynDynBase, DynDynTable, StableDynDyn};
+use crate::{DynDyn, DynDynBase, DynDynMut, DynDynTable};
 use core::marker::{PhantomData, Unsize};
 use core::ops::{Deref, DerefMut};
 use core::ptr;
@@ -32,7 +32,7 @@ where
     /// Additionally, if this fat pointer is cloned, the same guarantee must apply to the result of `ptr.clone()` for the lifespan of the
     /// cloned fat pointer.
     pub unsafe fn new_unchecked(ptr: P) -> Self {
-        let table = DynDyn::<B>::deref_dyn_dyn(&ptr).1;
+        let table = DynDyn::<B>::deref_dyn_dyn(&&*ptr).1;
 
         DynDynFat {
             ptr,
@@ -75,7 +75,7 @@ where
     }
 }
 
-impl<'a, B: ?Sized + DynDynBase, P: Deref + StableDynDyn<'a, B>> DynDynFat<B, P>
+impl<B: ?Sized + DynDynBase, P: StableDeref> DynDynFat<B, P>
 where
     P::Target: Unsize<B>,
 {
@@ -118,6 +118,28 @@ where
     }
 }
 
+// SAFETY: All APIs for creating a DynDynFat either guarantee stable deref or are unsafe and require the caller to assert that this
+//         DynDynFat's table meets the requirements for this impl
+unsafe impl<B: ?Sized + DynDynBase, P: Deref> DynDyn<B> for DynDynFat<B, P>
+where
+    P::Target: Unsize<B>,
+{
+    fn deref_dyn_dyn(&self) -> (&B, DynDynTable) {
+        (&*self.ptr, self.table)
+    }
+}
+
+// SAFETY: All APIs for creating a DynDynFat either guarantee stable deref or are unsafe and require the caller to assert that this
+//         DynDynFat's table meets the requirements for this impl
+unsafe impl<B: ?Sized + DynDynBase, P: DerefMut> DynDynMut<B> for DynDynFat<B, P>
+where
+    P::Target: Unsize<B>,
+{
+    fn deref_mut_dyn_dyn(&mut self) -> (&mut B, DynDynTable) {
+        (&mut *self.ptr, self.table)
+    }
+}
+
 // SAFETY: DynDynFat implements deref() by dereferencing the wrapped pointer, so if that pointer is StableDeref then so is the DynDynFat
 unsafe impl<B: ?Sized + DynDynBase, P: StableDeref> StableDeref for DynDynFat<B, P> where
     P::Target: Unsize<B>
@@ -149,7 +171,7 @@ where
         let table = if ptr::eq(ptr.deref(), self.ptr.deref()) {
             self.table
         } else {
-            DynDyn::<B>::deref_dyn_dyn(&ptr).1
+            DynDyn::<B>::deref_dyn_dyn(&&*ptr).1
         };
 
         DynDynFat {

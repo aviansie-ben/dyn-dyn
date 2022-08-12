@@ -38,9 +38,33 @@ fn test_vtable_correct() {
 
     let d = &TestStruct as &dyn Base;
 
-    assert_eq!(Some(1), dyn_dyn_cast!(Base => SubTraitA, d).map(|a| a.a()));
-    assert_eq!(Some(2), dyn_dyn_cast!(Base => SubTraitB, d).map(|b| b.b()));
-    assert_eq!(None, dyn_dyn_cast!(Base => SubTraitC, d).map(|c| c.c()));
+    assert_eq!(
+        Some(1),
+        dyn_dyn_cast!(Base => SubTraitA, d).map(|a: &dyn SubTraitA| a.a())
+    );
+    assert_eq!(
+        Some(2),
+        dyn_dyn_cast!(Base => SubTraitB, d).map(|b: &dyn SubTraitB| b.b())
+    );
+    assert_eq!(
+        None,
+        dyn_dyn_cast!(Base => SubTraitC, d).map(|c: &dyn SubTraitC| c.c())
+    );
+
+    let d = &mut TestStruct as &mut dyn Base;
+
+    assert_eq!(
+        Some(1),
+        dyn_dyn_cast!(mut Base => SubTraitA, d).map(|a: &mut dyn SubTraitA| a.a())
+    );
+    assert_eq!(
+        Some(2),
+        dyn_dyn_cast!(mut Base => SubTraitB, d).map(|b: &mut dyn SubTraitB| b.b())
+    );
+    assert_eq!(
+        None,
+        dyn_dyn_cast!(mut Base => SubTraitC, d).map(|c: &mut dyn SubTraitC| c.c())
+    );
 }
 
 #[test]
@@ -49,6 +73,7 @@ fn test_data_pointer_correct() {
     trait Base {}
     trait TestTrait {
         fn test(&self) -> *const TestStruct;
+        fn test_mut(&mut self) -> *mut TestStruct;
     }
 
     struct TestStruct;
@@ -60,13 +85,22 @@ fn test_data_pointer_correct() {
         fn test(&self) -> *const TestStruct {
             self
         }
+
+        fn test_mut(&mut self) -> *mut TestStruct {
+            self
+        }
     }
 
-    let test = TestStruct;
+    let mut test = TestStruct;
 
-    let t = dyn_dyn_cast!(Base => TestTrait, &test);
-
-    assert_eq!(Some(&test as *const _), t.map(|t| t.test()));
+    assert_eq!(
+        Some(&test as *const _),
+        dyn_dyn_cast!(Base => TestTrait, &test).map(|t| t.test())
+    );
+    assert_eq!(
+        Some(&test as *const _ as *mut _),
+        dyn_dyn_cast!(mut Base => TestTrait, &mut test).map(|t| t.test_mut())
+    );
 }
 
 #[test]
@@ -88,11 +122,16 @@ fn test_from_alloc() {
         }
     }
 
-    let test_box = Box::new(TestStruct);
+    let mut test_box = Box::new(TestStruct);
 
     assert_eq!(
         Some(&*test_box as *const _),
-        dyn_dyn_cast!(Base => TestTrait, &test_box).map(|t| t.test())
+        dyn_dyn_cast!(Base => TestTrait, &test_box).map(|t: &dyn TestTrait| t.test())
+    );
+
+    assert_eq!(
+        Some(&mut *test_box as *const _),
+        dyn_dyn_cast!(mut Base => TestTrait, &mut test_box).map(|t: &mut dyn TestTrait| t.test())
     );
 
     let test_rc = Rc::new(TestStruct);

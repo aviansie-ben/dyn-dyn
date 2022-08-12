@@ -85,18 +85,10 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                 tgt_markers,
             } = input_parsed;
 
-            let (try_downcast, deref_helper, deref_helper_t) = if is_mut {
-                (
-                    quote!(try_downcast_mut),
-                    quote!(DerefMutHelper),
-                    quote!(DerefMutHelperT),
-                )
+            let (try_downcast, deref_helper) = if is_mut {
+                (quote!(try_downcast_mut), quote!(DerefMutHelper))
             } else {
-                (
-                    quote!(try_downcast),
-                    quote!(DerefHelper),
-                    quote!(DerefHelperT),
-                )
+                (quote!(try_downcast), quote!(DerefHelper))
             };
 
             let check_markers = if !tgt_markers.is_empty() || !base_markers.is_empty() {
@@ -121,9 +113,12 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                 let __dyn_dyn_input = #dyn_dyn::internal::#deref_helper::<dyn #base_primary_trait, _>::new(#val);
 
                 {
-                    use #dyn_dyn::internal::#deref_helper_t;
+                    use #dyn_dyn::internal::DerefHelperT;
 
-                    let __dyn_dyn_input = __dyn_dyn_input.__dyn_dyn_check_ref().__dyn_dyn_check_fat();
+                    let __dyn_dyn_input = __dyn_dyn_input
+                        .__dyn_dyn_check_ref()
+                        .__dyn_dyn_check_trait()
+                        .__dyn_dyn_check_deref();
 
                     #check_markers
 
