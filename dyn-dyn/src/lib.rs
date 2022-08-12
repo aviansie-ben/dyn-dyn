@@ -26,6 +26,16 @@ pub use dyn_dyn_macros::dyn_dyn_base;
 /// This macro allows for trying to cast such a reference to a reference to another trait object, returning an [`Option`] containing the
 /// reference to the downcast trait object if the object in question implements that trait.
 ///
+/// This macro accepts the following types for a given base trait `B`, with the first matching set of conditions determining how the
+/// dereference will occur:
+///
+/// - A (mutable) reference to a type that implements `B`, returning a (mutable) reference referring to the same object as the original
+///   reference
+/// - A (mutable) reference to a pointer type that implements [`DynDyn<B>`], returning a (mutable) reference referring to the pointee of
+///   that pointer
+/// - A (mutable) reference to a pointer type that implements Deref with a target that implements `B`, returning a (mutable) reference
+///   referring to the pointee of that pointer
+///
 /// # Examples
 ///
 /// ```rust,ignore
