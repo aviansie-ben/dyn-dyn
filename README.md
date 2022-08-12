@@ -6,9 +6,11 @@
 
 ## Usage
 
-`dyn-dyn` is used by declaring a "base trait" annotated with the `#[dyn_dyn_base]` attribute macro and annotating any `impl` blocks for that trait using the `#[dyn_dyn_derived(...)]` attribute macro, like so:
+`dyn-dyn` is used by declaring a "base trait" annotated with the `#[dyn_dyn_base]` attribute macro and annotating any `impl` blocks for that trait using the `#[dyn_dyn_derived(...)]` attribute macro. Any reference to the base trait can then be downcast to a reference to the derived trait by using the `dyn_dyn_cast!` macro, like so: 
 
-```rust,ignore
+```rust
+use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_derived};
+
 #[dyn_dyn_base]
 trait BaseTrait {}
 trait ExposedTrait {}
@@ -19,13 +21,13 @@ impl ExposedTrait for Struct {}
 
 #[dyn_dyn_derived(ExposedTrait)]
 impl BaseTrait for Struct {}
-```
 
-A reference to the trait object `&dyn BaseTrait` can then be downcast to any other trait object listed in the arguments of the `#[dyn_dyn_derived(...)]` attribute by using the `dyn_dyn_cast!` macro:
+fn main() {
+    let mut s = Struct;
 
-```rust,ignore
-let _: Option<&dyn ExposedTrait> = dyn_dyn_cast!(BaseTrait => ExposedTrait, &TestStruct as &dyn BaseTrait);
-let _: Option<&mut dyn ExposedTrait> = dyn_dyn_cast!(mut BaseTrait => ExposedTrait, &mut TestStruct as &mut dyn BaseTrait);
+    assert!(dyn_dyn_cast!(BaseTrait => ExposedTrait, &s).is_some());
+    assert!(dyn_dyn_cast!(mut BaseTrait => ExposedTrait, &mut s).is_some());
+}
 ```
 
 ## Using `dyn-dyn` with auto traits

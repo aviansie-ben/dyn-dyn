@@ -38,10 +38,17 @@ pub use dyn_dyn_macros::dyn_dyn_base;
 ///
 /// # Examples
 ///
-/// ```rust,ignore
+/// ```rust
+/// # use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_derived};
 /// #[dyn_dyn_base]
 /// trait Base {}
 /// trait Trait {}
+///
+/// struct Struct;
+///
+/// #[dyn_dyn_derived(Trait)]
+/// impl Base for Struct {}
+/// impl Trait for Struct {}
 ///
 /// fn downcast(r: &dyn Base) -> Option<&dyn Trait> {
 ///     dyn_dyn_cast!(Base => Trait, r)
@@ -54,6 +61,14 @@ pub use dyn_dyn_macros::dyn_dyn_base;
 /// fn downcast_with_auto(r: &(dyn Base + Send)) -> Option<&(dyn Trait + Send)> {
 ///     dyn_dyn_cast!(Base + Send => Trait + Send, r)
 /// }
+///
+/// fn main() {
+///     let mut s = Struct;
+///
+///     assert!(downcast(&s).is_some());
+///     assert!(downcast_mut(&mut s).is_some());
+///     assert!(downcast_with_auto(&s).is_some());
+/// }
 /// ```
 pub use dyn_dyn_macros::dyn_dyn_cast;
 
@@ -64,18 +79,21 @@ pub use dyn_dyn_macros::dyn_dyn_cast;
 ///
 /// # Examples
 ///
-/// ```rust,ignore
+/// ```rust
+/// # use core::fmt::Debug;
+/// # use dyn_dyn::{dyn_dyn_base, dyn_dyn_derived};
 /// #[dyn_dyn_base]
 /// trait Base {}
 ///
-/// #[derive(Clone, Debug)]
+/// #[derive(Debug)]
 /// struct Struct;
 ///
-/// #[dyn_dyn_derived(Clone, Debug)]
+/// #[dyn_dyn_derived(Debug)]
 /// impl Base for Struct {}
 /// ```
 ///
-/// ```rust,ignore
+/// ```rust
+/// # use dyn_dyn::{dyn_dyn_base, dyn_dyn_derived};
 /// #[dyn_dyn_base]
 /// trait Base {}
 /// trait Trait<T> {}
@@ -85,7 +103,7 @@ pub use dyn_dyn_macros::dyn_dyn_cast;
 /// impl<T> Trait<T> for Struct<T> {}
 ///
 /// #[dyn_dyn_derived(Trait<T>)]
-/// impl<T> Base for Struct<T> {}
+/// impl<T: 'static> Base for Struct<T> {}
 /// ```
 pub use dyn_dyn_macros::dyn_dyn_derived;
 
