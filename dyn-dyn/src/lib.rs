@@ -162,6 +162,11 @@ impl DynDynTable {
             .map(|meta| D::ptr_from_parts(data, meta))
     }
 
+    /// Returns a reference to the slice of entries in this table
+    pub fn into_slice(self) -> &'static [DynDynTableEntry] {
+        self.traits
+    }
+
     #[doc(hidden)]
     pub const fn new(traits: &'static [DynDynTableEntry]) -> DynDynTable {
         DynDynTable { traits }
