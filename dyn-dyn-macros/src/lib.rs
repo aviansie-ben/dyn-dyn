@@ -14,7 +14,6 @@ use syn::{parse_macro_input, ItemImpl, ItemTrait, Token, Type};
 mod base;
 mod cast;
 mod derived;
-mod util;
 
 #[proc_macro]
 pub fn dyn_dyn_cast(input: proc_macro::TokenStream) -> proc_macro::TokenStream {

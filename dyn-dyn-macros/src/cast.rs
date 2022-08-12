@@ -1,4 +1,3 @@
-use crate::util::dyn_dyn_crate;
 use proc_macro::{Diagnostic, Level};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
@@ -71,7 +70,6 @@ fn process_input(input: &DynDynCastInput) -> Result<DynDynCastProcessedInput, (S
 }
 
 pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
-    let dyn_dyn = dyn_dyn_crate();
     let input_parsed = process_input(&input);
 
     match input_parsed {
@@ -107,13 +105,13 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
 
             quote!((|__dyn_dyn_input| {
                 unsafe {
-                    #dyn_dyn::internal::#try_downcast::<dyn #base_primary_trait, dyn #tgt_primary_trait, _>(__dyn_dyn_input, |p| p as *mut (dyn #tgt_primary_trait #(+ #tgt_markers)*))
+                    ::dyn_dyn::internal::#try_downcast::<dyn #base_primary_trait, dyn #tgt_primary_trait, _>(__dyn_dyn_input, |p| p as *mut (dyn #tgt_primary_trait #(+ #tgt_markers)*))
                 }
             })({
-                let __dyn_dyn_input = #dyn_dyn::internal::#deref_helper::<dyn #base_primary_trait, _>::new(#val);
+                let __dyn_dyn_input = ::dyn_dyn::internal::#deref_helper::<dyn #base_primary_trait, _>::new(#val);
 
                 {
-                    use #dyn_dyn::internal::DerefHelperT;
+                    use ::dyn_dyn::internal::DerefHelperT;
 
                     let __dyn_dyn_input = __dyn_dyn_input
                         .__dyn_dyn_check_ref()

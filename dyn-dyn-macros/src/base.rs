@@ -4,10 +4,7 @@ use quote::{format_ident, quote, ToTokens};
 use syn::spanned::Spanned;
 use syn::{GenericParam, ItemTrait};
 
-use crate::util;
-
 pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
-    let dyn_dyn = util::dyn_dyn_crate();
     let vis = input.vis.clone();
     let ident = input.ident.clone();
     let generics = input.generics.clone();
@@ -34,7 +31,7 @@ pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
     let base_trait_ident = format_ident!("__dyn_dyn_{}_Base", ident);
     let mut base_trait_impl_generics = generics.clone();
 
-    base_trait_impl_generics.params.push(syn::parse2(quote!(__dyn_dyn_T: ?Sized + #dyn_dyn::internal::DynDynDerived<dyn #ident #type_generics>)).unwrap());
+    base_trait_impl_generics.params.push(syn::parse2(quote!(__dyn_dyn_T: ?Sized + ::dyn_dyn::internal::DynDynDerived<dyn #ident #type_generics>)).unwrap());
 
     input
         .supertraits
@@ -46,15 +43,15 @@ pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
         #[allow(non_camel_case_types)]
         #[doc(hidden)]
         #vis unsafe trait #base_trait_ident #generics #where_clause {
-            fn __dyn_dyn_get_table(&self) -> #dyn_dyn::DynDynTable;
+            fn __dyn_dyn_get_table(&self) -> ::dyn_dyn::DynDynTable;
         }
 
         unsafe impl #base_trait_impl_generics #base_trait_ident #type_generics for __dyn_dyn_T #where_clause {
-            fn __dyn_dyn_get_table(&self) -> #dyn_dyn::DynDynTable { <Self as #dyn_dyn::internal::DynDynDerived<dyn #ident #type_generics>>::get_dyn_dyn_table(self) }
+            fn __dyn_dyn_get_table(&self) -> ::dyn_dyn::DynDynTable { <Self as ::dyn_dyn::internal::DynDynDerived<dyn #ident #type_generics>>::get_dyn_dyn_table(self) }
         }
 
-        unsafe impl #impl_generics #dyn_dyn::internal::DynDynBase for dyn #ident #type_generics #where_clause {
-            fn get_dyn_dyn_table(&self) -> #dyn_dyn::DynDynTable { <Self as #base_trait_ident #type_generics>::__dyn_dyn_get_table(self) }
+        unsafe impl #impl_generics ::dyn_dyn::internal::DynDynBase for dyn #ident #type_generics #where_clause {
+            fn get_dyn_dyn_table(&self) -> ::dyn_dyn::DynDynTable { <Self as #base_trait_ident #type_generics>::__dyn_dyn_get_table(self) }
         }
     };
 

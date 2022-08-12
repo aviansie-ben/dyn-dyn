@@ -1,4 +1,3 @@
-use crate::util;
 use proc_macro::{Diagnostic, Level};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
@@ -25,7 +24,6 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
         return input.to_token_stream();
     }
 
-    let dyn_dyn = util::dyn_dyn_crate();
     let self_ty = input.self_ty.clone();
     let trait_ = input.trait_.clone().unwrap().1;
     let generics = input.generics.clone();
@@ -83,9 +81,9 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
                 }
             )*
 
-            pub const __TABLE: [#dyn_dyn::DynDynTableEntry; #num_table_entries] = unsafe { [
+            pub const __TABLE: [::dyn_dyn::DynDynTableEntry; #num_table_entries] = unsafe { [
                 #(
-                    #dyn_dyn::DynDynTableEntry::new::<
+                    ::dyn_dyn::DynDynTableEntry::new::<
                         #self_ty,
                         dyn #convert_tys_1,
                         _
@@ -94,9 +92,9 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
             ] };
         }
 
-        unsafe impl #impl_generics #dyn_dyn::internal::DynDynDerived<dyn #trait_> for #self_ty #where_clause {
-            fn get_dyn_dyn_table(&self) -> #dyn_dyn::DynDynTable {
-                #dyn_dyn::DynDynTable::new(&#table_ident #turbo_tok #type_generics::__TABLE[..])
+        unsafe impl #impl_generics ::dyn_dyn::internal::DynDynDerived<dyn #trait_> for #self_ty #where_clause {
+            fn get_dyn_dyn_table(&self) -> ::dyn_dyn::DynDynTable {
+                ::dyn_dyn::DynDynTable::new(&#table_ident #turbo_tok #type_generics::__TABLE[..])
             }
         }
     };
