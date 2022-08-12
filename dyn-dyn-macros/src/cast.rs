@@ -83,10 +83,14 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                 tgt_markers,
             } = input_parsed;
 
-            let (try_downcast, deref_helper) = if is_mut {
-                (quote!(try_downcast_mut), quote!(DerefMutHelper))
+            let (mut_tok, try_downcast, deref_helper) = if is_mut {
+                (
+                    quote!(mut),
+                    quote!(try_downcast_mut),
+                    quote!(DerefMutHelper),
+                )
             } else {
-                (quote!(try_downcast), quote!(DerefHelper))
+                (quote!(), quote!(try_downcast), quote!(DerefHelper))
             };
 
             let check_markers = if !tgt_markers.is_empty() || !base_markers.is_empty() {
@@ -103,9 +107,17 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                 quote!()
             };
 
-            quote!((|__dyn_dyn_input| {
-                unsafe {
+            quote!((|__dyn_dyn_input| unsafe {
+                if true {
                     ::dyn_dyn::internal::#try_downcast::<dyn #base_primary_trait, dyn #tgt_primary_trait, _>(__dyn_dyn_input, |p| p as *mut (dyn #tgt_primary_trait #(+ #tgt_markers)*))
+                } else {
+                    fn __dyn_dyn_constrain_lifetime<'__dyn_dyn_ref, '__dyn_dyn_life>(
+                        _: &'__dyn_dyn_ref #mut_tok (dyn #base_primary_trait + '__dyn_dyn_life)
+                    ) -> &'__dyn_dyn_ref #mut_tok (dyn #tgt_primary_trait #(+ #tgt_markers)* + '__dyn_dyn_life) {
+                        unreachable!()
+                    }
+
+                    Some(__dyn_dyn_constrain_lifetime(__dyn_dyn_input.0))
                 }
             })({
                 let __dyn_dyn_input = ::dyn_dyn::internal::#deref_helper::<dyn #base_primary_trait, _>::new(#val);
