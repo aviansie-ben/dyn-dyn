@@ -95,7 +95,7 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DerefHelperRef<'a, B, T>
         (self.0, table)
     }
 
-    pub fn __dyn_dyn_deref_typecheck(&self) -> &'static T {
+    pub fn __dyn_dyn_deref_typecheck(&self) -> &T {
         panic!("this method is only meant to be used for typechecking and should never be called")
     }
 }
@@ -114,7 +114,7 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + DynDyn<B>> DerefHelperDynDyn<'a, B,
         DynDyn::<B>::deref_dyn_dyn(self.0)
     }
 
-    pub fn __dyn_dyn_deref_typecheck(&self) -> &'static T::Target {
+    pub fn __dyn_dyn_deref_typecheck(&self) -> &T::Target {
         panic!("this method is only meant to be used for typechecking and should never be called")
     }
 }
@@ -200,7 +200,7 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DerefMutHelperRef<'a, B,
         (self.0, table)
     }
 
-    pub fn __dyn_dyn_deref_typecheck(&self) -> &'static T {
+    pub fn __dyn_dyn_deref_typecheck(&self) -> &T {
         panic!("this method is only meant to be used for typechecking and should never be called")
     }
 }
@@ -219,7 +219,7 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + DynDynMut<B>> DerefMutHelperDynDyn<
         DynDynMut::<B>::deref_mut_dyn_dyn(self.0)
     }
 
-    pub fn __dyn_dyn_deref_typecheck(&self) -> &'static T::Target {
+    pub fn __dyn_dyn_deref_typecheck(&self) -> &T::Target {
         panic!("this method is only meant to be used for typechecking and should never be called")
     }
 }
