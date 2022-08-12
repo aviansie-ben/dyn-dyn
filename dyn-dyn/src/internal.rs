@@ -8,7 +8,8 @@ pub unsafe trait DynDynDerived<B: ?Sized + DynDynBase> {
     fn get_dyn_dyn_table(&self) -> DynDynTable;
 }
 
-pub trait DynDynBase {
+#[allow(clippy::missing_safety_doc)] // This module is marked doc(hidden)
+pub unsafe trait DynDynBase {
     fn get_dyn_dyn_table(&self) -> DynDynTable;
 }
 

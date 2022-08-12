@@ -19,7 +19,8 @@ trait Base {
     fn get_dyn_dyn_table(&self) -> DynDynTable;
 }
 
-impl<'a> DynDynBase for dyn Base + 'a {
+// SAFETY: This is for testing purposes only, so we rely on internal implementation details that get around the safety requirements
+unsafe impl<'a> DynDynBase for dyn Base + 'a {
     fn get_dyn_dyn_table(&self) -> DynDynTable {
         self.get_dyn_dyn_table()
     }
