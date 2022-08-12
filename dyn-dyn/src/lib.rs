@@ -91,7 +91,6 @@ use core::any::TypeId;
 use core::marker::Unsize;
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
-use stable_deref_trait::StableDeref;
 
 use crate::dyn_trait::{AnyDynMetadata, DynInfo, DynTrait};
 use internal::*;
@@ -184,13 +183,15 @@ impl Iterator for DynDynTableIterator {
 /// # Safety
 ///
 /// Any reference returned by [`DynDyn::deref_dyn_dyn`] must have been received by calling [`Deref::deref`]. The table returned by
-/// [`DynDyn::deref_dyn_dyn`] must correspond to the correct concrete type matching the returned reference.
+/// [`DynDyn::deref_dyn_dyn`] must correspond to the correct concrete type matching the returned reference. This table must also not change
+/// for any subsequent calls to [`DynDyn::deref_dyn_dyn`] for the lifetime of this pointer.
 pub unsafe trait DynDyn<B: ?Sized + DynDynBase>: Deref {
     /// Dereferences this pointer, returning a reference to its pointee and a [`DynDynTable`] corresponding to the pointee's concrete type.
     fn deref_dyn_dyn(&self) -> (&B, DynDynTable);
 }
 
-// SAFETY: The DynDynTable returned comes from calling get_dyn_dyn_table on the returned reference.
+// SAFETY: The DynDynTable returned comes from calling get_dyn_dyn_table on the returned reference. The concrete type of the pointee of a
+//         reference also cannot change for the lifetime of that reference, so the table returned should be stable.
 unsafe impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DynDyn<B> for &'a T {
     #[inline]
     fn deref_dyn_dyn(&self) -> (&B, DynDynTable) {
@@ -201,7 +202,8 @@ unsafe impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DynDyn<B> for &'a
     }
 }
 
-// SAFETY: The DynDynTable returned comes from calling get_dyn_dyn_table on the returned reference.
+// SAFETY: The DynDynTable returned comes from calling get_dyn_dyn_table on the returned reference. The concrete type of the pointee of a
+//         reference also cannot change for the lifetime of that reference, so the table returned should be stable.
 unsafe impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DynDyn<B> for &'a mut T {
     fn deref_dyn_dyn(&self) -> (&B, DynDynTable) {
         let tgt = &**self;
@@ -217,13 +219,17 @@ unsafe impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DynDyn<B> for &'a
 ///
 /// Any reference returned by [`DynDynMut::deref_mut_dyn_dyn`] must have been received by calling [`DerefMut::deref_mut`]. The table
 /// returned by [`DynDynMut::deref_mut_dyn_dyn`] must correspond to the correct concrete type matching the returned reference.
+///
+/// Additionally, the [`DynDynTable`] value returned must not change for the lifetime of this pointer and must match the table returned by
+/// calling [`DynDyn::deref_dyn_dyn`].
 pub unsafe trait DynDynMut<B: ?Sized + DynDynBase>: DynDyn<B> + DerefMut {
     /// Dereferences this pointer, returning a mutable reference to its pointee and a [`DynDynTable`] corresponding to the pointee's
     /// concrete type.
     fn deref_mut_dyn_dyn(&mut self) -> (&mut B, DynDynTable);
 }
 
-// SAFETY: The DynDynTable returned comes from calling get_dyn_dyn_table on the returned mutable reference.
+// SAFETY: The DynDynTable returned comes from calling get_dyn_dyn_table on the returned reference. The concrete type of the pointee of a
+//         reference also cannot change for the lifetime of that reference, so the table returned should be stable.
 unsafe impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DynDynMut<B> for &'a mut T {
     #[inline]
     fn deref_mut_dyn_dyn(&mut self) -> (&mut B, DynDynTable) {
@@ -233,18 +239,3 @@ unsafe impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DynDynMut<B> for 
         (tgt, table)
     }
 }
-
-/// A pointer that can have its pointee dynamically cast to other trait types via the base trait object type `B` and for which the
-/// [`DynDynTable`] returned by dereferencing it is stable.
-///
-/// # Safety
-///
-/// The [`DynDynTable`] values returned by [`DynDyn::deref_dyn_dyn`] must not change for the lifetime of this pointer. If [`DynDynMut`] is
-/// implemented, the [`DynDynTable`] values returned by [`DynDynMut::deref_mut_dyn_dyn`] must not change either and must match the tables
-/// returned by [`DynDyn::deref_dyn_dyn`].
-pub unsafe trait StableDynDyn<B: ?Sized + DynDynBase>: DynDyn<B> {}
-
-// SAFETY: Since the pointer itself must be stable, the underlying type of the pointee cannot change. Since the tables returned by the
-//         DynDyn and DynDynMut implementations must have come from dereferencing the pointer, it follows that these tables should also be
-//         stable.
-unsafe impl<B: ?Sized + DynDynBase, T: DynDyn<B> + StableDeref> StableDynDyn<B> for T {}
