@@ -2,6 +2,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(missing_docs)]
 #![warn(clippy::undocumented_unsafe_blocks)]
+#![feature(coerce_unsized)]
 #![feature(const_convert)]
 #![feature(const_nonnull_new)]
 #![feature(const_option)]
@@ -116,6 +117,7 @@ mod fat;
 pub mod internal;
 
 use core::any::TypeId;
+use core::fmt::{self, Debug};
 use core::marker::Unsize;
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
@@ -128,7 +130,6 @@ use internal::*;
 /// Each entry represents a single trait object that the concrete type in question can be downcast to. Note that entries will only appear
 /// for bare trait object types, i.e. `dyn Trait`. Trait objects with extra marker types, e.g. `dyn Trait + Send`, are handled specially
 /// by the [`dyn_dyn_cast!`] macro and do not appear in a concrete type's trait table.
-#[derive(Debug)]
 pub struct DynDynTableEntry {
     ty: DynInfo,
     meta: AnyDynMetadata,
@@ -158,6 +159,23 @@ impl DynDynTableEntry {
     #[cfg(feature = "dynamic-names")]
     pub fn type_name(&self) -> &'static str {
         self.ty.name()
+    }
+}
+
+impl Debug for DynDynTableEntry {
+    #[cfg(feature = "dynamic-names")]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "DynDynTableEntry(<{}>: {:?})",
+            self.type_name(),
+            self.meta
+        )
+    }
+
+    #[cfg(not(feature = "dynamic-names"))]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "DynDynTableEntry({:?}: {:?})", self.type_id(), self.meta)
     }
 }
 

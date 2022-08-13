@@ -1,8 +1,12 @@
 use crate::{DynDyn, DynDynBase, DynDynMut, DynDynTable};
+use core::fmt::{self, Display, Pointer};
 use core::marker::{PhantomData, Unsize};
 use core::ops::{Deref, DerefMut};
 use core::ptr;
 use stable_deref_trait::{CloneStableDeref, StableDeref};
+use std::cmp::Ordering;
+use std::hash::{Hash, Hasher};
+use std::ops::CoerceUnsized;
 
 /// A fat pointer to an object that can be downcast via the base trait object `B`.
 ///
@@ -183,3 +187,98 @@ where
 }
 
 impl<B: ?Sized + DynDynBase, P: Deref + Copy> Copy for DynDynFat<B, P> where P::Target: Unsize<B> {}
+
+impl<B: ?Sized + DynDynBase, P: StableDeref + Default> Default for DynDynFat<B, P>
+where
+    P::Target: Unsize<B>,
+{
+    fn default() -> Self {
+        DynDynFat::new(Default::default())
+    }
+}
+
+impl<B: ?Sized + DynDynBase, P: StableDeref> From<P> for DynDynFat<B, P>
+where
+    P::Target: Unsize<B>,
+{
+    fn from(ptr: P) -> Self {
+        DynDynFat::new(ptr)
+    }
+}
+
+impl<B: ?Sized + DynDynBase, P: Deref> AsRef<P> for DynDynFat<B, P>
+where
+    P::Target: Unsize<B>,
+{
+    fn as_ref(&self) -> &P {
+        &self.ptr
+    }
+}
+
+impl<B1: ?Sized + DynDynBase, B2: ?Sized + DynDynBase, P1: Deref, P2: Deref>
+    PartialEq<DynDynFat<B2, P2>> for DynDynFat<B1, P1>
+where
+    P1::Target: Unsize<B1> + PartialEq<P2::Target>,
+    P2::Target: Unsize<B2>,
+{
+    fn eq(&self, other: &DynDynFat<B2, P2>) -> bool {
+        PartialEq::eq(&*self.ptr, &*other.ptr)
+    }
+}
+
+impl<B: ?Sized + DynDynBase, P: Deref> Eq for DynDynFat<B, P> where P::Target: Unsize<B> + Eq {}
+
+impl<B: ?Sized + DynDynBase, P: Deref> Hash for DynDynFat<B, P>
+where
+    P::Target: Unsize<B> + Hash,
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        Hash::hash(&*self.ptr, state)
+    }
+}
+
+impl<B1: ?Sized + DynDynBase, B2: ?Sized + DynDynBase, P1: Deref, P2: Deref>
+    PartialOrd<DynDynFat<B2, P2>> for DynDynFat<B1, P1>
+where
+    P1::Target: Unsize<B1> + PartialOrd<P2::Target>,
+    P2::Target: Unsize<B2>,
+{
+    fn partial_cmp(&self, other: &DynDynFat<B2, P2>) -> Option<Ordering> {
+        PartialOrd::partial_cmp(&*self.ptr, &*other.ptr)
+    }
+}
+
+impl<B: ?Sized + DynDynBase, P: Deref> Ord for DynDynFat<B, P>
+where
+    P::Target: Unsize<B> + Ord,
+{
+    fn cmp(&self, other: &Self) -> Ordering {
+        Ord::cmp(&*self.ptr, &*other.ptr)
+    }
+}
+
+impl<B: ?Sized + DynDynBase, P1: Deref + CoerceUnsized<P2>, P2: Deref>
+    CoerceUnsized<DynDynFat<B, P2>> for DynDynFat<B, P1>
+where
+    P1::Target: Unsize<B>,
+    P2::Target: Unsize<B>,
+{
+}
+
+impl<B: ?Sized + DynDynBase, P: Deref + Display> Display for DynDynFat<B, P>
+where
+    P::Target: Unsize<B>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.ptr)
+    }
+}
+
+impl<B: ?Sized + DynDynBase, P: Deref + Pointer> Pointer for DynDynFat<B, P>
+where
+    P::Target: Unsize<B>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:p}", self.ptr)
+    }
+}
