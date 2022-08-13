@@ -6,7 +6,7 @@ keywords = ["cast", "downcast", "trait"]
 repository = "https://github.com/aviansie-ben/dyn-dyn"
 readme = "../README.md"
 license = "MIT OR Apache-2.0"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 authors = ["Benjamin Thomas <ben@benthomas.ca>"]
 edition = "2021"
 
@@ -18,5 +18,5 @@ std = ["alloc", "stable_deref_trait/std"]
 
 [dependencies]
 cfg-if = "1.0"
-dyn-dyn-macros = { path = "../dyn-dyn-macros", version = "0.1.0" }
+dyn-dyn-macros = { path = "../dyn-dyn-macros", version = "0.1.0-alpha.1" }
 stable_deref_trait = { version = "1.2.0", default-features = false }
