@@ -1,12 +1,12 @@
 use crate::{DynDyn, DynDynBase, DynDynMut, DynDynTable};
+use core::cmp::Ordering;
 use core::fmt::{self, Display, Pointer};
+use core::hash::{Hash, Hasher};
 use core::marker::{PhantomData, Unsize};
+use core::ops::CoerceUnsized;
 use core::ops::{Deref, DerefMut};
 use core::ptr;
 use stable_deref_trait::{CloneStableDeref, StableDeref};
-use std::cmp::Ordering;
-use std::hash::{Hash, Hasher};
-use std::ops::CoerceUnsized;
 
 /// A fat pointer to an object that can be downcast via the base trait object `B`.
 ///
