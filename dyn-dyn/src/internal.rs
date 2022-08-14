@@ -27,6 +27,16 @@ pub trait DerefHelperT {
     fn __dyn_dyn_check_deref(self) -> Self;
 }
 
+pub trait DerefHelperEnd {
+    type BaseRef;
+    type ActualDeref: ?Sized;
+
+    fn end(self) -> (Self::BaseRef, DynDynTable);
+    fn typecheck(&self) -> &Self::ActualDeref {
+        panic!("this method is only meant to be used for typechecking and should never be called")
+    }
+}
+
 pub struct DerefHelper<'a, B: ?Sized + DynDynBase, T: ?Sized>(&'a T, PhantomData<fn(B) -> B>);
 
 impl<'a, B: ?Sized + DynDynBase, T: ?Sized> DerefHelper<'a, B, T> {
@@ -59,11 +69,18 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + DynDyn<B>> DerefHelper<'a, B, T> {
     pub fn __dyn_dyn_check_trait(self) -> DerefHelperDynDyn<'a, B, T> {
         DerefHelperDynDyn(self.0, self.1)
     }
+}
 
-    // This method should never actually be called, since __dyn_dyn_check_trait should always result in a DerefHelperTrait with these trait
-    // bounds. This method is only actually here so that we get a reasonable error message if all the checks fail.
-    pub fn __dyn_dyn_deref(self) -> (&'a B, DynDynTable) {
-        unreachable!()
+// This impl should never actually be used, since __dyn_dyn_check_trait should always result in a DerefHelperTrait with these trait bounds.
+// This impl is only actually here so that we get a reasonable error message if all the checks fail.
+impl<'a, B: ?Sized + DynDynBase + 'a, T: ?Sized + DynDyn<B>> DerefHelperEnd
+    for DerefHelper<'a, B, T>
+{
+    type BaseRef = &'a B;
+    type ActualDeref = &'a T;
+
+    fn end(self) -> (&'a B, DynDynTable) {
+        panic!("this method should never be called!")
     }
 }
 
@@ -89,14 +106,17 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DerefHelperRef<'a, B, T>
     pub fn __dyn_dyn_check_deref(self) -> Self {
         self
     }
+}
 
-    pub fn __dyn_dyn_deref(self) -> (&'a B, DynDynTable) {
+impl<'a, B: ?Sized + DynDynBase + 'a, T: ?Sized + Unsize<B>> DerefHelperEnd
+    for DerefHelperRef<'a, B, T>
+{
+    type BaseRef = &'a B;
+    type ActualDeref = T;
+
+    fn end(self) -> (&'a B, DynDynTable) {
         let (_, table) = DynDyn::<B>::deref_dyn_dyn(&self.0);
         (self.0, table)
-    }
-
-    pub fn __dyn_dyn_deref_typecheck(&self) -> &T {
-        panic!("this method is only meant to be used for typechecking and should never be called")
     }
 }
 
@@ -109,13 +129,16 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + DynDyn<B>> DerefHelperDynDyn<'a, B,
     pub fn __dyn_dyn_check_deref(self) -> Self {
         self
     }
+}
 
-    pub fn __dyn_dyn_deref(self) -> (&'a B, DynDynTable) {
+impl<'a, B: ?Sized + DynDynBase + 'a, T: ?Sized + DynDyn<B>> DerefHelperEnd
+    for DerefHelperDynDyn<'a, B, T>
+{
+    type BaseRef = &'a B;
+    type ActualDeref = T::Target;
+
+    fn end(self) -> (&'a B, DynDynTable) {
         DynDyn::<B>::deref_dyn_dyn(self.0)
-    }
-
-    pub fn __dyn_dyn_deref_typecheck(&self) -> &T::Target {
-        panic!("this method is only meant to be used for typechecking and should never be called")
     }
 }
 
@@ -164,11 +187,18 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + DynDynMut<B>> DerefMutHelper<'a, B,
     pub fn __dyn_dyn_check_trait(self) -> DerefMutHelperDynDyn<'a, B, T> {
         DerefMutHelperDynDyn(self.0, self.1)
     }
+}
 
-    // This method should never actually be called, since __dyn_dyn_check_trait should always result in a DerefHelperTrait with these trait
-    // bounds. This method is only actually here so that we get a reasonable error message if all the checks fail.
-    pub fn __dyn_dyn_deref(self) -> (&'a mut B, DynDynTable) {
-        unreachable!()
+// This impl should never actually be used, since __dyn_dyn_check_trait should always result in a DerefHelperTrait with these trait bounds.
+// This impl is only actually here so that we get a reasonable error message if all the checks fail.
+impl<'a, B: ?Sized + DynDynBase + 'a, T: ?Sized + DynDynMut<B>> DerefHelperEnd
+    for DerefMutHelper<'a, B, T>
+{
+    type BaseRef = &'a mut B;
+    type ActualDeref = &'a T;
+
+    fn end(self) -> (&'a mut B, DynDynTable) {
+        panic!("this method should never be called!")
     }
 }
 
@@ -194,14 +224,17 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DerefMutHelperRef<'a, B,
     pub fn __dyn_dyn_check_deref(self) -> Self {
         self
     }
+}
 
-    pub fn __dyn_dyn_deref(mut self) -> (&'a mut B, DynDynTable) {
+impl<'a, B: ?Sized + DynDynBase + 'a, T: ?Sized + Unsize<B>> DerefHelperEnd
+    for DerefMutHelperRef<'a, B, T>
+{
+    type BaseRef = &'a mut B;
+    type ActualDeref = T;
+
+    fn end(mut self) -> (&'a mut B, DynDynTable) {
         let (_, table) = DynDynMut::<B>::deref_mut_dyn_dyn(&mut self.0);
         (self.0, table)
-    }
-
-    pub fn __dyn_dyn_deref_typecheck(&self) -> &T {
-        panic!("this method is only meant to be used for typechecking and should never be called")
     }
 }
 
@@ -214,13 +247,16 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + DynDynMut<B>> DerefMutHelperDynDyn<
     pub fn __dyn_dyn_check_deref(self) -> Self {
         self
     }
+}
 
-    pub fn __dyn_dyn_deref(self) -> (&'a mut B, DynDynTable) {
+impl<'a, B: ?Sized + DynDynBase + 'a, T: ?Sized + DynDynMut<B>> DerefHelperEnd
+    for DerefMutHelperDynDyn<'a, B, T>
+{
+    type BaseRef = &'a mut B;
+    type ActualDeref = T;
+
+    fn end(self) -> (&'a mut B, DynDynTable) {
         DynDynMut::<B>::deref_mut_dyn_dyn(self.0)
-    }
-
-    pub fn __dyn_dyn_deref_typecheck(&self) -> &T::Target {
-        panic!("this method is only meant to be used for typechecking and should never be called")
     }
 }
 
