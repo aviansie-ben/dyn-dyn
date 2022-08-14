@@ -204,3 +204,23 @@ fn test_multi_base() {
     assert!(dyn_dyn_cast!(BaseB => TraitA, &TestStruct as &dyn BaseB).is_none());
     assert!(dyn_dyn_cast!(BaseB => TraitB, &TestStruct as &dyn BaseB).is_some());
 }
+
+#[test]
+fn test_temporaries_extended() {
+    #[dyn_dyn_base]
+    trait Base {}
+    trait Trait {}
+
+    struct TestStruct;
+
+    #[dyn_dyn_derived(Trait)]
+    impl Base for TestStruct {}
+    impl Trait for TestStruct {}
+
+    fn return_temporary() -> TestStruct {
+        TestStruct
+    }
+
+    assert!(dyn_dyn_cast!(Base => Trait, &return_temporary() as &dyn Base).is_some());
+    assert!(dyn_dyn_cast!(mut Base => Trait, &mut return_temporary() as &mut dyn Base).is_some());
+}

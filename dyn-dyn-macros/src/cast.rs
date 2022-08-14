@@ -100,7 +100,7 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                             r: &(impl ?Sized + #base_primary_trait #(+ #base_markers)*)
                         ) -> &(impl ?Sized + #base_primary_trait #(+ #tgt_markers)*) { r }
 
-                        __dyn_dyn_marker_check(__dyn_dyn_input.__dyn_dyn_deref_typecheck());
+                        __dyn_dyn_marker_check(::dyn_dyn::internal::DerefHelperEnd::typecheck(&__dyn_dyn_input));
                     }
                 )
             } else {
@@ -108,6 +108,9 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
             };
 
             quote!((|__dyn_dyn_input| unsafe {
+                #check_markers
+
+                let __dyn_dyn_input = ::dyn_dyn::internal::DerefHelperEnd::end(__dyn_dyn_input);
                 if true {
                     ::dyn_dyn::internal::#try_downcast::<dyn #base_primary_trait, dyn #tgt_primary_trait, _>(__dyn_dyn_input, |p| p as *mut (dyn #tgt_primary_trait #(+ #tgt_markers)*))
                 } else {
@@ -120,20 +123,12 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                     Some(__dyn_dyn_constrain_lifetime(__dyn_dyn_input.0))
                 }
             })({
-                let __dyn_dyn_input = ::dyn_dyn::internal::#deref_helper::<dyn #base_primary_trait, _>::new(#val);
+                use ::dyn_dyn::internal::DerefHelperT;
 
-                {
-                    use ::dyn_dyn::internal::DerefHelperT;
-
-                    let __dyn_dyn_input = __dyn_dyn_input
-                        .__dyn_dyn_check_ref()
-                        .__dyn_dyn_check_trait()
-                        .__dyn_dyn_check_deref();
-
-                    #check_markers
-
-                    __dyn_dyn_input.__dyn_dyn_deref()
-                }
+                ::dyn_dyn::internal::#deref_helper::<dyn #base_primary_trait, _>::new(#val)
+                    .__dyn_dyn_check_ref()
+                    .__dyn_dyn_check_trait()
+                    .__dyn_dyn_check_deref()
             }))
         }
         Err((span, err)) => {
