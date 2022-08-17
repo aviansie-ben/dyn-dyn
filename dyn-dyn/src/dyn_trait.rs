@@ -69,14 +69,14 @@ impl PartialEq for DynInfo {
 
 impl Eq for DynInfo {}
 
-pub trait DynTrait: private::Sealed + 'static {
+pub trait DynTrait: private::Sealed {
     fn ptr_into_parts(ptr: NonNull<Self>) -> (NonNull<()>, AnyDynMetadata);
     unsafe fn ptr_from_parts(data: NonNull<()>, meta: AnyDynMetadata) -> NonNull<Self>;
 
     unsafe fn meta_for_ty<U, F: ~const FnOnce(*const U) -> *const Self>(f: F) -> AnyDynMetadata;
 }
 
-impl<T: Pointee<Metadata = DynMetadata<T>> + ?Sized + 'static> const DynTrait for T {
+impl<T: Pointee<Metadata = DynMetadata<T>> + ?Sized> const DynTrait for T {
     fn ptr_into_parts(ptr: NonNull<Self>) -> (NonNull<()>, AnyDynMetadata) {
         (ptr.cast(), ptr::metadata(ptr.as_ptr()).into())
     }
@@ -95,5 +95,5 @@ mod private {
 
     pub trait Sealed {}
 
-    impl<T: Pointee<Metadata = DynMetadata<T>> + ?Sized + 'static> Sealed for T {}
+    impl<T: Pointee<Metadata = DynMetadata<T>> + ?Sized> Sealed for T {}
 }
