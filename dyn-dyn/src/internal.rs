@@ -7,8 +7,6 @@ use core::ptr::DynMetadata;
 use core::ptr::NonNull;
 use stable_deref_trait::StableDeref;
 
-pub use crate::dyn_trait::AnyDynMetadata;
-
 #[allow(clippy::missing_safety_doc)] // This module is marked doc(hidden)
 pub unsafe trait DynDynDerived<B: ?Sized + DynDynBase> {
     fn get_dyn_dyn_table(&self) -> DynDynTable;
