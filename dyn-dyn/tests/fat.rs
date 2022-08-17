@@ -7,7 +7,7 @@ use alloc::rc::Rc;
 use core::cell::Cell;
 use core::ops::Deref;
 use dyn_dyn::internal::DynDynBase;
-use dyn_dyn::{dyn_dyn_cast, DynDynFat, DynDynTable, DynDynTableEntry};
+use dyn_dyn::{dyn_dyn_cast, DynDynFat, DynDynTable, DynDynTableEntry, GetDynDynTable};
 use stable_deref_trait::StableDeref;
 
 // We need the pointers to these two tables to be distinct in order to properly differentiate them, so these cannot be declared as
@@ -54,6 +54,14 @@ impl<'a> Deref for WeirdCloneBox<'a> {
 
 // SAFETY: Just a wrapper around Box<TestStruct<'a>>
 unsafe impl<'a> StableDeref for WeirdCloneBox<'a> {}
+
+unsafe impl<'a> GetDynDynTable<dyn Base + 'a> for WeirdCloneBox<'a> {
+    type DynTarget = dyn Base;
+
+    fn get_dyn_dyn_table(&self) -> DynDynTable {
+        <&TestStruct as GetDynDynTable<dyn Base + 'a>>::get_dyn_dyn_table(&&*self.0)
+    }
+}
 
 #[test]
 fn test_get_table_cached() {

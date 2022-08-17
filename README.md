@@ -27,6 +27,7 @@ fn main() {
 
     assert!(dyn_dyn_cast!(BaseTrait => ExposedTrait, &s).is_some());
     assert!(dyn_dyn_cast!(mut BaseTrait => ExposedTrait, &mut s).is_some());
+    assert!(dyn_dyn_cast!(move BaseTrait => ExposedTrait, Box::new(s)).is_some());
 }
 ```
 
@@ -38,7 +39,7 @@ This works for any auto traits, including those declared by other crates using t
 
 ## Limitations
 
-Currently, `dyn-dyn` only works in nightly versions of Rust due to its use of the unstable `ptr_metadata` and `unsize` features, as well as due to its use of several standard library features in `const` contexts.
+Currently, `dyn-dyn` only works in nightly versions of Rust due to its use of the unstable `generic_associated_types`, `ptr_metadata`, and `unsize` features, as well as due to its use of several standard library features in `const` contexts.
 
 Due to limitations of `TypeId`, `dyn-dyn` can only currently work with types and traits that are `'static`.
 
