@@ -39,31 +39,43 @@ fn test_vtable_correct() {
     let d = &TestStruct as &dyn Base;
 
     assert_eq!(
-        Some(1),
-        dyn_dyn_cast!(Base => SubTraitA, d).map(|a: &dyn SubTraitA| a.a())
+        Ok(1),
+        dyn_dyn_cast!(Base => SubTraitA, d)
+            .map(|a: &dyn SubTraitA| a.a())
+            .map_err(|_| ())
     );
     assert_eq!(
-        Some(2),
-        dyn_dyn_cast!(Base => SubTraitB, d).map(|b: &dyn SubTraitB| b.b())
+        Ok(2),
+        dyn_dyn_cast!(Base => SubTraitB, d)
+            .map(|b: &dyn SubTraitB| b.b())
+            .map_err(|_| ())
     );
     assert_eq!(
-        None,
-        dyn_dyn_cast!(Base => SubTraitC, d).map(|c: &dyn SubTraitC| c.c())
+        Err(()),
+        dyn_dyn_cast!(Base => SubTraitC, d)
+            .map(|c: &dyn SubTraitC| c.c())
+            .map_err(|_| ())
     );
 
     let d = &mut TestStruct as &mut dyn Base;
 
     assert_eq!(
-        Some(1),
-        dyn_dyn_cast!(mut Base => SubTraitA, d).map(|a: &mut dyn SubTraitA| a.a())
+        Ok(1),
+        dyn_dyn_cast!(mut Base => SubTraitA, d)
+            .map(|a: &mut dyn SubTraitA| a.a())
+            .map_err(|_| ())
     );
     assert_eq!(
-        Some(2),
-        dyn_dyn_cast!(mut Base => SubTraitB, d).map(|b: &mut dyn SubTraitB| b.b())
+        Ok(2),
+        dyn_dyn_cast!(mut Base => SubTraitB, d)
+            .map(|b: &mut dyn SubTraitB| b.b())
+            .map_err(|_| ())
     );
     assert_eq!(
-        None,
-        dyn_dyn_cast!(mut Base => SubTraitC, d).map(|c: &mut dyn SubTraitC| c.c())
+        Err(()),
+        dyn_dyn_cast!(mut Base => SubTraitC, d)
+            .map(|c: &mut dyn SubTraitC| c.c())
+            .map_err(|_| ())
     );
 }
 
@@ -94,12 +106,16 @@ fn test_data_pointer_correct() {
     let mut test = TestStruct;
 
     assert_eq!(
-        Some(&test as *const _),
-        dyn_dyn_cast!(Base => TestTrait, &test).map(|t| t.test())
+        Ok(&test as *const _),
+        dyn_dyn_cast!(Base => TestTrait, &test)
+            .map(|t| t.test())
+            .map_err(|_| ())
     );
     assert_eq!(
-        Some(&test as *const _ as *mut _),
-        dyn_dyn_cast!(mut Base => TestTrait, &mut test).map(|t| t.test_mut())
+        Ok(&test as *const _ as *mut _),
+        dyn_dyn_cast!(mut Base => TestTrait, &mut test)
+            .map(|t| t.test_mut())
+            .map_err(|_| ())
     );
 }
 
@@ -125,20 +141,26 @@ fn test_from_alloc() {
     let mut test_box = Box::new(TestStruct);
 
     assert_eq!(
-        Some(&*test_box as *const _),
-        dyn_dyn_cast!(Base => TestTrait, &test_box).map(|t: &dyn TestTrait| t.test())
+        Ok(&*test_box as *const _),
+        dyn_dyn_cast!(Base => TestTrait, &test_box)
+            .map(|t: &dyn TestTrait| t.test())
+            .map_err(|_| ())
     );
 
     assert_eq!(
-        Some(&mut *test_box as *const _),
-        dyn_dyn_cast!(mut Base => TestTrait, &mut test_box).map(|t: &mut dyn TestTrait| t.test())
+        Ok(&mut *test_box as *const _),
+        dyn_dyn_cast!(mut Base => TestTrait, &mut test_box)
+            .map(|t: &mut dyn TestTrait| t.test())
+            .map_err(|_| ())
     );
 
     let test_rc = Rc::new(TestStruct);
 
     assert_eq!(
-        Some(&*test_rc as *const _),
-        dyn_dyn_cast!(Base => TestTrait, &test_rc).map(|t| t.test())
+        Ok(&*test_rc as *const _),
+        dyn_dyn_cast!(Base => TestTrait, &test_rc)
+            .map(|t| t.test())
+            .map_err(|_| ())
     );
 }
 
@@ -159,9 +181,10 @@ fn test_external_trait() {
     }
 
     assert_eq!(
-        Some("TestStruct(\"abc\")".to_owned()),
+        Ok("TestStruct(\"abc\")".to_owned()),
         dyn_dyn_cast!(Base => fmt::Debug, &TestStruct("abc") as &dyn Base)
             .map(|f| format!("{:?}", f))
+            .map_err(|_| ())
     );
 }
 
@@ -175,7 +198,7 @@ fn test_external_type() {
     impl Base for u32 {}
     impl TestTrait for u32 {}
 
-    assert!(dyn_dyn_cast!(Base => TestTrait, &0_u32 as &dyn Base).is_some());
+    assert!(dyn_dyn_cast!(Base => TestTrait, &0_u32 as &dyn Base).is_ok());
 }
 
 #[test]
@@ -198,11 +221,11 @@ fn test_multi_base() {
     impl BaseB for TestStruct {}
     impl TraitB for TestStruct {}
 
-    assert!(dyn_dyn_cast!(BaseA => TraitA, &TestStruct as &dyn BaseA).is_some());
-    assert!(dyn_dyn_cast!(BaseA => TraitB, &TestStruct as &dyn BaseA).is_none());
+    assert!(dyn_dyn_cast!(BaseA => TraitA, &TestStruct as &dyn BaseA).is_ok());
+    assert!(dyn_dyn_cast!(BaseA => TraitB, &TestStruct as &dyn BaseA).is_err());
 
-    assert!(dyn_dyn_cast!(BaseB => TraitA, &TestStruct as &dyn BaseB).is_none());
-    assert!(dyn_dyn_cast!(BaseB => TraitB, &TestStruct as &dyn BaseB).is_some());
+    assert!(dyn_dyn_cast!(BaseB => TraitA, &TestStruct as &dyn BaseB).is_err());
+    assert!(dyn_dyn_cast!(BaseB => TraitB, &TestStruct as &dyn BaseB).is_ok());
 }
 
 #[test]
@@ -221,6 +244,6 @@ fn test_temporaries_extended() {
         TestStruct
     }
 
-    assert!(dyn_dyn_cast!(Base => Trait, &return_temporary() as &dyn Base).is_some());
-    assert!(dyn_dyn_cast!(mut Base => Trait, &mut return_temporary() as &mut dyn Base).is_some());
+    assert!(dyn_dyn_cast!(Base => Trait, &return_temporary() as &dyn Base).is_ok());
+    assert!(dyn_dyn_cast!(mut Base => Trait, &mut return_temporary() as &mut dyn Base).is_ok());
 }

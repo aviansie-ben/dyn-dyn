@@ -74,8 +74,8 @@ fn test_get_table_cached() {
         &EMPTY_TABLE_1.1[..] as *const _,
         DynDynFat::get_dyn_dyn_table(&ptr).into_slice() as *const _
     );
-    dyn_dyn_cast!(Base => Base, &ptr);
-    dyn_dyn_cast!(mut Base => Base, &mut ptr);
+    let _ = dyn_dyn_cast!(Base => Base, &ptr);
+    let _ = dyn_dyn_cast!(mut Base => Base, &mut ptr);
     assert_eq!(1, num_table_calls.get());
 }
 

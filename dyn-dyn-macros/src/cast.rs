@@ -131,12 +131,16 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
 
                 let __dyn_dyn_table = ::dyn_dyn::internal::DerefHelperEnd::<dyn #base_primary_trait>::get_dyn_dyn_table(&__dyn_dyn_input);
                 if true {
-                    __dyn_dyn_table.find::<dyn #tgt_primary_trait>().map(|__dyn_dyn_metadata| {
+                    if let ::core::option::Option::Some(__dyn_dyn_metadata) = __dyn_dyn_table.find::<dyn #tgt_primary_trait>() {
                         #cast_metadata
-                        ::dyn_dyn::internal::DerefHelperEnd::<dyn #base_primary_trait>::downcast_unchecked::<
+                        ::core::result::Result::Ok(::dyn_dyn::internal::DerefHelperEnd::<dyn #base_primary_trait>::downcast_unchecked::<
                             dyn #tgt_primary_trait #(+ #tgt_markers)*
-                        >(__dyn_dyn_input, __dyn_dyn_metadata)
-                    })
+                        >(__dyn_dyn_input, __dyn_dyn_metadata))
+                    } else {
+                        ::core::result::Result::Err(::dyn_dyn::internal::DerefHelperEnd::<dyn #base_primary_trait>::into_err(
+                            __dyn_dyn_input
+                        ))
+                    }
                 } else {
                     fn __dyn_dyn_constrain_lifetime<
                         '__dyn_dyn_ref,
@@ -150,7 +154,7 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                         unreachable!()
                     }
 
-                    Some(__dyn_dyn_constrain_lifetime(
+                    ::core::result::Result::Ok(__dyn_dyn_constrain_lifetime(
                         ::dyn_dyn::internal::DerefHelperEnd::<dyn #base_primary_trait>::unwrap(__dyn_dyn_input)
                     ))
                 }
