@@ -65,7 +65,7 @@ impl DynDynTableEntry {
     ) -> DynDynTableEntry {
         DynDynTableEntry {
             ty: DynInfo::of::<D>(),
-            meta: D::meta_for_ty::<T>(),
+            meta: D::meta_for_ty::<T>().into(),
         }
     }
 
