@@ -1,5 +1,3 @@
-use cfg_if::cfg_if;
-use core::any::TypeId;
 use core::ptr::{DynMetadata, NonNull, Pointee};
 use core::{mem, ptr};
 
@@ -29,47 +27,6 @@ unsafe impl Send for AnyDynMetadata {}
 
 // SAFETY: Since DynMetadata<T>: Sync for all T, AnyDynMetadata should also be Sync
 unsafe impl Sync for AnyDynMetadata {}
-
-cfg_if! {
-    if #[cfg(feature = "dynamic-names")] {
-        type TypeName = &'static str;
-
-        const fn type_name<T: ?Sized>() -> TypeName {
-            core::any::type_name::<T>()
-        }
-    } else {
-        #[derive(Debug, Clone, Copy)]
-        struct TypeName;
-
-        const fn type_name<T: ?Sized>() -> TypeName { TypeName }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct DynInfo(TypeId, TypeName);
-
-impl DynInfo {
-    pub const fn of<T: 'static + ?Sized>() -> DynInfo {
-        DynInfo(TypeId::of::<T>(), type_name::<T>())
-    }
-
-    pub fn type_id(self) -> TypeId {
-        self.0
-    }
-
-    #[cfg(feature = "dynamic-names")]
-    pub fn name(self) -> &'static str {
-        self.1
-    }
-}
-
-impl PartialEq for DynInfo {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
-    }
-}
-
-impl Eq for DynInfo {}
 
 pub trait DynTrait: private::Sealed {
     fn ptr_into_parts(ptr: NonNull<Self>) -> (NonNull<()>, DynMetadata<Self>);
