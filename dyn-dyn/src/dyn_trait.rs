@@ -1,3 +1,4 @@
+use core::marker::Unsize;
 use core::ptr::{DynMetadata, NonNull, Pointee};
 use core::{mem, ptr};
 
@@ -32,7 +33,7 @@ pub trait DynTrait: private::Sealed {
     fn ptr_into_parts(ptr: NonNull<Self>) -> (NonNull<()>, DynMetadata<Self>);
     fn ptr_from_parts(data: NonNull<()>, meta: DynMetadata<Self>) -> NonNull<Self>;
 
-    unsafe fn meta_for_ty<U, F: ~const FnOnce(*const U) -> *const Self>(f: F) -> AnyDynMetadata;
+    fn meta_for_ty<U: Unsize<Self>>() -> AnyDynMetadata;
 }
 
 impl<T: Pointee<Metadata = DynMetadata<T>> + ?Sized> const DynTrait for T {
@@ -45,10 +46,8 @@ impl<T: Pointee<Metadata = DynMetadata<T>> + ?Sized> const DynTrait for T {
         unsafe { NonNull::new_unchecked(ptr::from_raw_parts_mut(data.as_ptr(), meta)) }
     }
 
-    unsafe fn meta_for_ty<U, F: ~const FnOnce(*const U) -> *const Self>(f: F) -> AnyDynMetadata {
-        Self::ptr_into_parts(NonNull::new(f(NonNull::dangling().as_ptr()) as *mut _).unwrap())
-            .1
-            .into()
+    fn meta_for_ty<U: Unsize<Self>>() -> AnyDynMetadata {
+        ptr::metadata(ptr::null::<U>() as *const Self).into()
     }
 }
 

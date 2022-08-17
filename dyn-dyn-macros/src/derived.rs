@@ -56,10 +56,7 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
         Some(quote!(::))
     };
 
-    let convert_fns_0 = (0..num_table_entries).map(|i| format_ident!("__convert_{}", i));
-    let convert_tys_0 = args.iter();
-    let convert_fns_1 = convert_fns_0.clone();
-    let convert_tys_1 = args.iter();
+    let convert_tys = args.iter();
 
     let marker_contents = input.generics.params.iter().filter_map(|p| match *p {
         GenericParam::Type(ref p) => Some(p.ident.clone()),
@@ -75,21 +72,11 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
         struct #table_ident #generics(#marker_contents) #where_clause;
 
         impl #impl_generics #table_ident #type_generics #where_clause {
-            #(
-                const fn #convert_fns_0(p: *const #self_ty) -> *const dyn #convert_tys_0 {
-                    p as *const dyn #convert_tys_0
-                }
-            )*
-
-            pub const __TABLE: [::dyn_dyn::DynDynTableEntry; #num_table_entries] = unsafe { [
+            pub const __TABLE: [::dyn_dyn::DynDynTableEntry; #num_table_entries] = [
                 #(
-                    ::dyn_dyn::DynDynTableEntry::new::<
-                        #self_ty,
-                        dyn #convert_tys_1,
-                        _
-                    >(Self::#convert_fns_1)
+                    ::dyn_dyn::DynDynTableEntry::new::<#self_ty, dyn #convert_tys>()
                 ),*
-            ] };
+            ];
         }
 
         unsafe impl #impl_generics ::dyn_dyn::internal::DynDynDerived<dyn #trait_> for #self_ty #where_clause {
