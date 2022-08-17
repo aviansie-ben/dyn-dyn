@@ -2,6 +2,7 @@ use crate::dyn_trait::{AnyDynMetadata, DynTrait};
 use cfg_if::cfg_if;
 use core::any::TypeId;
 use core::fmt::{self, Debug};
+use core::marker::Unsize;
 use core::ptr::DynMetadata;
 
 #[cfg(doc)]
@@ -60,16 +61,10 @@ pub struct DynDynTableEntry {
 
 impl DynDynTableEntry {
     #[doc(hidden)]
-    pub const unsafe fn new<
-        T,
-        D: ?Sized + ~const DynTrait + 'static,
-        F: ~const FnOnce(*const T) -> *const D,
-    >(
-        f: F,
-    ) -> DynDynTableEntry {
+    pub const fn new<T: Unsize<D>, D: ?Sized + ~const DynTrait + 'static>() -> DynDynTableEntry {
         DynDynTableEntry {
             ty: DynInfo::of::<D>(),
-            meta: D::meta_for_ty(f),
+            meta: D::meta_for_ty::<T>(),
         }
     }
 
