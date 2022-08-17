@@ -1,10 +1,13 @@
 use crate::{
-    AnyDynMetadata, DowncastUnchecked, DynDyn, DynDynRef, DynDynRefMut, DynDynTable, DynTrait,
-    GetDynDynTable,
+    DowncastUnchecked, DynDyn, DynDynRef, DynDynRefMut, DynDynTable, DynTrait, GetDynDynTable,
 };
 use core::marker::{PhantomData, Unsize};
 use core::ops::{Deref, DerefMut};
+use core::ptr::DynMetadata;
+use core::ptr::NonNull;
 use stable_deref_trait::StableDeref;
+
+pub use crate::dyn_trait::AnyDynMetadata;
 
 #[allow(clippy::missing_safety_doc)] // This module is marked doc(hidden)
 pub unsafe trait DynDynDerived<B: ?Sized + DynDynBase> {
@@ -44,7 +47,7 @@ pub trait DerefHelperEnd<'a, B: ?Sized + DynDynBase> {
     fn get_dyn_dyn_table(&self) -> DynDynTable;
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: AnyDynMetadata,
+        metadata: DynMetadata<D>,
     ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D>;
     fn unwrap(self) -> Self::Inner;
     fn typecheck(&self) -> &<Self::Inner as GetDynDynTable<B>>::DynTarget {
@@ -138,7 +141,7 @@ impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>> DerefHelperEnd<'a, B>
 
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: AnyDynMetadata,
+        metadata: DynMetadata<D>,
     ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D> {
         self.0.downcast_unchecked(metadata)
     }
@@ -146,4 +149,14 @@ impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>> DerefHelperEnd<'a, B>
     fn unwrap(self) -> Self::Inner {
         self.0
     }
+}
+
+pub fn cast_metadata<T: ?Sized + DynTrait, U: ?Sized + DynTrait>(
+    meta: DynMetadata<T>,
+    f: impl Fn(*mut T) -> *mut U,
+) -> DynMetadata<U> {
+    U::ptr_into_parts(
+        NonNull::new(f(T::ptr_from_parts(NonNull::dangling(), meta).as_ptr())).unwrap(),
+    )
+    .1
 }

@@ -1,11 +1,11 @@
-use crate::{AnyDynMetadata, DowncastUnchecked, DynDynBase, DynDynTable, DynTrait, GetDynDynTable};
+use crate::{DowncastUnchecked, DynDynBase, DynDynTable, DynTrait, GetDynDynTable};
 use core::cmp::Ordering;
 use core::fmt::{self, Display, Pointer};
 use core::hash::{Hash, Hasher};
 use core::marker::{PhantomData, Unsize};
 use core::ops::CoerceUnsized;
 use core::ops::{Deref, DerefMut};
-use core::ptr;
+use core::ptr::{self, DynMetadata};
 use stable_deref_trait::{CloneStableDeref, StableDeref};
 
 /// A fat pointer to an object that can be downcast via the base trait object `B`.
@@ -117,7 +117,7 @@ impl<'a, B: ?Sized + DynDynBase, P: DowncastUnchecked<'a, B> + 'a> DowncastUnche
 
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: AnyDynMetadata,
+        metadata: DynMetadata<D>,
     ) -> Self::DowncastResult<D> {
         self.ptr.downcast_unchecked(metadata)
     }

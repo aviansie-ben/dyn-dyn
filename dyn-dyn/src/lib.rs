@@ -130,7 +130,7 @@ use core::any::TypeId;
 use core::fmt::{self, Debug};
 use core::marker::{PhantomData, Unsize};
 use core::ops::DerefMut;
-use core::ptr::NonNull;
+use core::ptr::{DynMetadata, NonNull};
 use stable_deref_trait::StableDeref;
 
 use crate::dyn_trait::{AnyDynMetadata, DynInfo, DynTrait};
@@ -206,8 +206,11 @@ impl DynDynTable {
     }
 
     /// Finds the metadata corresponding to the trait `D` in this table or `None` if no such metadata is present.
-    pub fn find<D: ?Sized + DynTrait + 'static>(&self) -> Option<AnyDynMetadata> {
-        self.find_untyped(TypeId::of::<D>())
+    pub fn find<D: ?Sized + DynTrait + 'static>(&self) -> Option<DynMetadata<D>> {
+        self.find_untyped(TypeId::of::<D>()).map(|meta| {
+            // SAFETY: This metadata corresponds to the trait D, so we can downcast it
+            unsafe { meta.downcast() }
+        })
     }
 
     /// Returns a reference to the slice of entries in this table
@@ -326,7 +329,7 @@ pub trait DowncastUnchecked<'a, B: ?Sized + DynDynBase> {
     /// and safe to use before this function can be called.
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: AnyDynMetadata,
+        metadata: DynMetadata<D>,
     ) -> Self::DowncastResult<D>;
 }
 
@@ -352,7 +355,7 @@ unsafe impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> GetDynDynTable<B>
 impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DowncastUnchecked<'a, B> for &'a T {
     type DowncastResult<D: ?Sized + 'a> = &'a D;
 
-    unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: AnyDynMetadata) -> &'a D {
+    unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: DynMetadata<D>) -> &'a D {
         &*D::ptr_from_parts(NonNull::from(self).cast(), metadata).as_ptr()
     }
 }
@@ -381,7 +384,7 @@ where
 
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: AnyDynMetadata,
+        metadata: DynMetadata<D>,
     ) -> Self::DowncastResult<D> {
         <&T::Target as DowncastUnchecked<B>>::downcast_unchecked(&**self.0, metadata)
     }
@@ -403,7 +406,7 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DowncastUnchecked<'a, B>
 
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: AnyDynMetadata,
+        metadata: DynMetadata<D>,
     ) -> &'a mut D {
         &mut *D::ptr_from_parts(NonNull::from(self).cast(), metadata).as_ptr()
     }
@@ -433,7 +436,7 @@ where
 
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: AnyDynMetadata,
+        metadata: DynMetadata<D>,
     ) -> Self::DowncastResult<D> {
         <&mut T::Target as DowncastUnchecked<B>>::downcast_unchecked(&mut **self.0, metadata)
     }
@@ -461,7 +464,7 @@ cfg_if! {
         {
             type DowncastResult<D: ?Sized + 'a> = Box<D>;
 
-            unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: AnyDynMetadata) -> Box<D> {
+            unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: DynMetadata<D>) -> Box<D> {
                 Box::from_raw(
                     D::ptr_from_parts(NonNull::new_unchecked(Box::into_raw(self)).cast(), metadata)
                         .as_ptr(),
@@ -485,7 +488,7 @@ cfg_if! {
         {
             type DowncastResult<D: ?Sized + 'a> = Rc<D>;
 
-            unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: AnyDynMetadata) -> Rc<D> {
+            unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: DynMetadata<D>) -> Rc<D> {
                 Rc::from_raw(
                     D::ptr_from_parts(
                         NonNull::new_unchecked(Rc::into_raw(self) as *mut T).cast(),
@@ -512,7 +515,7 @@ cfg_if! {
         {
             type DowncastResult<D: ?Sized + 'a> = Arc<D>;
 
-            unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: AnyDynMetadata) -> Arc<D> {
+            unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: DynMetadata<D>) -> Arc<D> {
                 Arc::from_raw(
                     D::ptr_from_parts(
                         NonNull::new_unchecked(Arc::into_raw(self) as *mut T).cast(),

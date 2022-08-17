@@ -116,13 +116,26 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                 quote!()
             };
 
+            let cast_metadata = if !tgt_markers.is_empty() {
+                quote! {
+                    let __dyn_dyn_metadata = ::dyn_dyn::internal::cast_metadata::<
+                        dyn #tgt_primary_trait, dyn #tgt_primary_trait #(+ #tgt_markers)*
+                    >(__dyn_dyn_metadata, |__dyn_dyn_ptr| __dyn_dyn_ptr as *mut (dyn #tgt_primary_trait #(+ #tgt_markers)*));
+                }
+            } else {
+                quote!()
+            };
+
             quote!((|__dyn_dyn_input| unsafe {
                 #check_markers
 
                 let __dyn_dyn_table = ::dyn_dyn::internal::DerefHelperEnd::<dyn #base_primary_trait>::get_dyn_dyn_table(&__dyn_dyn_input);
                 if true {
                     __dyn_dyn_table.find::<dyn #tgt_primary_trait>().map(|__dyn_dyn_metadata| {
-                        ::dyn_dyn::internal::DerefHelperEnd::<dyn #base_primary_trait>::downcast_unchecked::<dyn #tgt_primary_trait #(+ #tgt_markers)*>(__dyn_dyn_input, __dyn_dyn_metadata)
+                        #cast_metadata
+                        ::dyn_dyn::internal::DerefHelperEnd::<dyn #base_primary_trait>::downcast_unchecked::<
+                            dyn #tgt_primary_trait #(+ #tgt_markers)*
+                        >(__dyn_dyn_input, __dyn_dyn_metadata)
                     })
                 } else {
                     fn __dyn_dyn_constrain_lifetime<

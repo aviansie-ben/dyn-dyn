@@ -4,8 +4,10 @@ use core::ptr::{DynMetadata, NonNull, Pointee};
 use core::{mem, ptr};
 
 #[derive(Debug, Clone, Copy)]
+#[allow(missing_docs)]
 pub struct AnyDynMetadata(*const ());
 
+#[allow(clippy::missing_safety_doc, missing_docs)] // This module is marked doc(hidden)
 impl AnyDynMetadata {
     pub const unsafe fn downcast<T: DynTrait + ?Sized>(self) -> DynMetadata<T> {
         mem::transmute(self.0)
@@ -70,23 +72,26 @@ impl PartialEq for DynInfo {
 impl Eq for DynInfo {}
 
 pub trait DynTrait: private::Sealed {
-    fn ptr_into_parts(ptr: NonNull<Self>) -> (NonNull<()>, AnyDynMetadata);
-    unsafe fn ptr_from_parts(data: NonNull<()>, meta: AnyDynMetadata) -> NonNull<Self>;
+    fn ptr_into_parts(ptr: NonNull<Self>) -> (NonNull<()>, DynMetadata<Self>);
+    fn ptr_from_parts(data: NonNull<()>, meta: DynMetadata<Self>) -> NonNull<Self>;
 
     unsafe fn meta_for_ty<U, F: ~const FnOnce(*const U) -> *const Self>(f: F) -> AnyDynMetadata;
 }
 
 impl<T: Pointee<Metadata = DynMetadata<T>> + ?Sized> const DynTrait for T {
-    fn ptr_into_parts(ptr: NonNull<Self>) -> (NonNull<()>, AnyDynMetadata) {
-        (ptr.cast(), ptr::metadata(ptr.as_ptr()).into())
+    fn ptr_into_parts(ptr: NonNull<Self>) -> (NonNull<()>, DynMetadata<T>) {
+        (ptr.cast(), ptr::metadata(ptr.as_ptr()))
     }
 
-    unsafe fn ptr_from_parts(data: NonNull<()>, meta: AnyDynMetadata) -> NonNull<Self> {
-        NonNull::new_unchecked(ptr::from_raw_parts_mut(data.as_ptr(), meta.downcast()))
+    fn ptr_from_parts(data: NonNull<()>, meta: DynMetadata<T>) -> NonNull<Self> {
+        // SAFETY: If data is not null, then the result of attaching metadata to it is not null either
+        unsafe { NonNull::new_unchecked(ptr::from_raw_parts_mut(data.as_ptr(), meta)) }
     }
 
     unsafe fn meta_for_ty<U, F: ~const FnOnce(*const U) -> *const Self>(f: F) -> AnyDynMetadata {
-        Self::ptr_into_parts(NonNull::new(f(NonNull::dangling().as_ptr()) as *mut _).unwrap()).1
+        Self::ptr_into_parts(NonNull::new(f(NonNull::dangling().as_ptr()) as *mut _).unwrap())
+            .1
+            .into()
     }
 }
 
