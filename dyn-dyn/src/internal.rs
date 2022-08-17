@@ -46,7 +46,7 @@ pub trait DerefHelperEnd<'a, B: ?Sized + DynDynBase> {
     fn get_dyn_dyn_table(&self) -> DynDynTable;
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: DynMetadata<D>,
+        metadata: DynMetadata<D::Root>,
     ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D>;
     fn unwrap(self) -> Self::Inner;
     fn into_err(self) -> Self::Err;
@@ -181,7 +181,7 @@ impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>, E, F: FnOnce(T) -> E> DerefHe
 
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: DynMetadata<D>,
+        metadata: DynMetadata<D::Root>,
     ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D> {
         self.0.downcast_unchecked(metadata)
     }
@@ -196,9 +196,9 @@ impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>, E, F: FnOnce(T) -> E> DerefHe
 }
 
 pub fn cast_metadata<T: ?Sized + DynTrait, U: ?Sized + DynTrait>(
-    meta: DynMetadata<T>,
+    meta: DynMetadata<T::Root>,
     f: impl Fn(*mut T) -> *mut U,
-) -> DynMetadata<U> {
+) -> DynMetadata<U::Root> {
     U::ptr_into_parts(
         NonNull::new(f(T::ptr_from_parts(NonNull::dangling(), meta).as_ptr())).unwrap(),
     )

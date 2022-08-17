@@ -117,7 +117,7 @@ impl<'a, B: ?Sized + DynDynBase, P: DowncastUnchecked<'a, B> + 'a> DowncastUnche
 
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: DynMetadata<D>,
+        metadata: DynMetadata<D::Root>,
     ) -> Self::DowncastResult<D> {
         self.ptr.downcast_unchecked(metadata)
     }

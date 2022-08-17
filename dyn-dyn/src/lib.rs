@@ -221,7 +221,7 @@ pub trait DowncastUnchecked<'a, B: ?Sized + DynDynBase> {
     /// and safe to use before this function can be called.
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: DynMetadata<D>,
+        metadata: DynMetadata<D::Root>,
     ) -> Self::DowncastResult<D>;
 }
 
@@ -247,7 +247,10 @@ unsafe impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> GetDynDynTable<B>
 impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DowncastUnchecked<'a, B> for &'a T {
     type DowncastResult<D: ?Sized + 'a> = &'a D;
 
-    unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: DynMetadata<D>) -> &'a D {
+    unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
+        self,
+        metadata: DynMetadata<D::Root>,
+    ) -> &'a D {
         &*D::ptr_from_parts(NonNull::from(self).cast(), metadata).as_ptr()
     }
 }
@@ -276,7 +279,7 @@ where
 
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: DynMetadata<D>,
+        metadata: DynMetadata<D::Root>,
     ) -> Self::DowncastResult<D> {
         <&T::Target as DowncastUnchecked<B>>::downcast_unchecked(&**self.0, metadata)
     }
@@ -298,7 +301,7 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DowncastUnchecked<'a, B>
 
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: DynMetadata<D>,
+        metadata: DynMetadata<D::Root>,
     ) -> &'a mut D {
         &mut *D::ptr_from_parts(NonNull::from(self).cast(), metadata).as_ptr()
     }
@@ -328,7 +331,7 @@ where
 
     unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
         self,
-        metadata: DynMetadata<D>,
+        metadata: DynMetadata<D::Root>,
     ) -> Self::DowncastResult<D> {
         <&mut T::Target as DowncastUnchecked<B>>::downcast_unchecked(&mut **self.0, metadata)
     }
@@ -356,7 +359,7 @@ cfg_if! {
         {
             type DowncastResult<D: ?Sized + 'a> = Box<D>;
 
-            unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: DynMetadata<D>) -> Box<D> {
+            unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: DynMetadata<D::Root>) -> Box<D> {
                 Box::from_raw(
                     D::ptr_from_parts(NonNull::new_unchecked(Box::into_raw(self)).cast(), metadata)
                         .as_ptr(),
@@ -380,7 +383,7 @@ cfg_if! {
         {
             type DowncastResult<D: ?Sized + 'a> = Rc<D>;
 
-            unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: DynMetadata<D>) -> Rc<D> {
+            unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: DynMetadata<D::Root>) -> Rc<D> {
                 Rc::from_raw(
                     D::ptr_from_parts(
                         NonNull::new_unchecked(Rc::into_raw(self) as *mut T).cast(),
@@ -407,7 +410,7 @@ cfg_if! {
         {
             type DowncastResult<D: ?Sized + 'a> = Arc<D>;
 
-            unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: DynMetadata<D>) -> Arc<D> {
+            unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(self, metadata: DynMetadata<D::Root>) -> Arc<D> {
                 Arc::from_raw(
                     D::ptr_from_parts(
                         NonNull::new_unchecked(Arc::into_raw(self) as *mut T).cast(),
