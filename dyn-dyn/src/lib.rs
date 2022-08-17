@@ -52,29 +52,29 @@ pub use dyn_dyn_macros::dyn_dyn_base;
 /// impl Base for Struct {}
 /// impl Trait for Struct {}
 ///
-/// fn downcast(r: &dyn Base) -> Option<&dyn Trait> {
+/// fn downcast(r: &dyn Base) -> Result<&dyn Trait, &dyn Base> {
 ///     dyn_dyn_cast!(Base => Trait, r)
 /// }
 ///
-/// fn downcast_mut(r: &mut dyn Base) -> Option<&mut dyn Trait> {
+/// fn downcast_mut(r: &mut dyn Base) -> Result<&mut dyn Trait, &mut dyn Base> {
 ///     dyn_dyn_cast!(mut Base => Trait, r)
 /// }
 ///
-/// fn downcast_with_auto(r: &(dyn Base + Send)) -> Option<&(dyn Trait + Send)> {
+/// fn downcast_with_auto(r: &(dyn Base + Send)) -> Result<&(dyn Trait + Send), &(dyn Base + Send)> {
 ///     dyn_dyn_cast!(Base + Send => Trait + Send, r)
 /// }
 ///
-/// fn downcast_box(r: Box<dyn Base>) -> Option<Box<dyn Trait>> {
+/// fn downcast_box(r: Box<dyn Base>) -> Result<Box<dyn Trait>, Box<dyn Base>> {
 ///     dyn_dyn_cast!(move Base => Trait, r)
 /// }
 ///
 /// fn main() {
 ///     let mut s = Struct;
 ///
-///     assert!(downcast(&s).is_some());
-///     assert!(downcast_mut(&mut s).is_some());
-///     assert!(downcast_with_auto(&s).is_some());
-///     assert!(downcast_box(Box::new(s)).is_some());
+///     assert!(downcast(&s).is_ok());
+///     assert!(downcast_mut(&mut s).is_ok());
+///     assert!(downcast_with_auto(&s).is_ok());
+///     assert!(downcast_box(Box::new(s)).is_ok());
 /// }
 /// ```
 pub use dyn_dyn_macros::dyn_dyn_cast;

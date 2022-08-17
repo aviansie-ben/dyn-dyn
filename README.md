@@ -25,9 +25,9 @@ impl BaseTrait for Struct {}
 fn main() {
     let mut s = Struct;
 
-    assert!(dyn_dyn_cast!(BaseTrait => ExposedTrait, &s).is_some());
-    assert!(dyn_dyn_cast!(mut BaseTrait => ExposedTrait, &mut s).is_some());
-    assert!(dyn_dyn_cast!(move BaseTrait => ExposedTrait, Box::new(s)).is_some());
+    assert!(dyn_dyn_cast!(BaseTrait => ExposedTrait, &s).is_ok());
+    assert!(dyn_dyn_cast!(mut BaseTrait => ExposedTrait, &mut s).is_ok());
+    assert!(dyn_dyn_cast!(move BaseTrait => ExposedTrait, Box::new(s)).is_ok());
 }
 ```
 

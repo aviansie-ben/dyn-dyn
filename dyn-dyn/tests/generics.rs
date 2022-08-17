@@ -19,11 +19,11 @@ fn test_generic_base() {
     impl TestTraitA for TestStruct {}
     impl TestTraitB for TestStruct {}
 
-    assert!(dyn_dyn_cast!(Base<u32> => TestTraitA, &TestStruct as &dyn Base<u32>).is_some());
-    assert!(dyn_dyn_cast!(Base<u32> => TestTraitB, &TestStruct as &dyn Base<u32>).is_none());
+    assert!(dyn_dyn_cast!(Base<u32> => TestTraitA, &TestStruct as &dyn Base<u32>).is_ok());
+    assert!(dyn_dyn_cast!(Base<u32> => TestTraitB, &TestStruct as &dyn Base<u32>).is_err());
 
-    assert!(dyn_dyn_cast!(Base<u64> => TestTraitA, &TestStruct as &dyn Base<u64>).is_none());
-    assert!(dyn_dyn_cast!(Base<u64> => TestTraitB, &TestStruct as &dyn Base<u64>).is_some());
+    assert!(dyn_dyn_cast!(Base<u64> => TestTraitA, &TestStruct as &dyn Base<u64>).is_err());
+    assert!(dyn_dyn_cast!(Base<u64> => TestTraitB, &TestStruct as &dyn Base<u64>).is_ok());
 }
 
 #[test]
@@ -51,16 +51,22 @@ fn test_generic_trait() {
     }
 
     assert_eq!(
-        Some(0),
-        dyn_dyn_cast!(Base => GenericTrait<u32>, &TestStruct as &dyn Base).map(|b| b.test())
+        Ok(0),
+        dyn_dyn_cast!(Base => GenericTrait<u32>, &TestStruct as &dyn Base)
+            .map(|b| b.test())
+            .map_err(|_| ())
     );
     assert_eq!(
-        Some(1),
-        dyn_dyn_cast!(Base => GenericTrait<u64>, &TestStruct as &dyn Base).map(|b| b.test())
+        Ok(1),
+        dyn_dyn_cast!(Base => GenericTrait<u64>, &TestStruct as &dyn Base)
+            .map(|b| b.test())
+            .map_err(|_| ())
     );
     assert_eq!(
-        None,
-        dyn_dyn_cast!(Base => GenericTrait<u16>, &TestStruct as &dyn Base).map(|b| b.test())
+        Err(()),
+        dyn_dyn_cast!(Base => GenericTrait<u16>, &TestStruct as &dyn Base)
+            .map(|b| b.test())
+            .map_err(|_| ())
     );
 }
 
@@ -85,21 +91,29 @@ fn test_generic_trait_from_param() {
     }
 
     assert_eq!(
-        Some(1234),
-        dyn_dyn_cast!(Base => GenericTrait<u32>, &TestStruct(0_u32) as &dyn Base).map(|b| b.test())
+        Ok(1234),
+        dyn_dyn_cast!(Base => GenericTrait<u32>, &TestStruct(0_u32) as &dyn Base)
+            .map(|b| b.test())
+            .map_err(|_| ())
     );
     assert_eq!(
-        None,
-        dyn_dyn_cast!(Base => GenericTrait<u64>, &TestStruct(0_u32) as &dyn Base).map(|b| b.test())
+        Err(()),
+        dyn_dyn_cast!(Base => GenericTrait<u64>, &TestStruct(0_u32) as &dyn Base)
+            .map(|b| b.test())
+            .map_err(|_| ())
     );
 
     assert_eq!(
-        None,
-        dyn_dyn_cast!(Base => GenericTrait<u32>, &TestStruct(0_u64) as &dyn Base).map(|b| b.test())
+        Err(()),
+        dyn_dyn_cast!(Base => GenericTrait<u32>, &TestStruct(0_u64) as &dyn Base)
+            .map(|b| b.test())
+            .map_err(|_| ())
     );
     assert_eq!(
-        Some(1234),
-        dyn_dyn_cast!(Base => GenericTrait<u64>, &TestStruct(0_u64) as &dyn Base).map(|b| b.test())
+        Ok(1234),
+        dyn_dyn_cast!(Base => GenericTrait<u64>, &TestStruct(0_u64) as &dyn Base)
+            .map(|b| b.test())
+            .map_err(|_| ())
     );
 }
 
@@ -116,16 +130,16 @@ fn test_generic_base_from_param() {
     impl<T: 'static> TestTrait<T> for TestStruct<T> {}
 
     assert!(
-        dyn_dyn_cast!(Base<u32> => TestTrait<u32>, &TestStruct(0_u32) as &dyn Base<u32>).is_some()
+        dyn_dyn_cast!(Base<u32> => TestTrait<u32>, &TestStruct(0_u32) as &dyn Base<u32>).is_ok()
     );
     assert!(
-        dyn_dyn_cast!(Base<u32> => TestTrait<u64>, &TestStruct(0_u32) as &dyn Base<u32>).is_none()
+        dyn_dyn_cast!(Base<u32> => TestTrait<u64>, &TestStruct(0_u32) as &dyn Base<u32>).is_err()
     );
     assert!(
-        dyn_dyn_cast!(Base<u64> => TestTrait<u32>, &TestStruct(0_u64) as &dyn Base<u64>).is_none()
+        dyn_dyn_cast!(Base<u64> => TestTrait<u32>, &TestStruct(0_u64) as &dyn Base<u64>).is_err()
     );
     assert!(
-        dyn_dyn_cast!(Base<u64> => TestTrait<u64>, &TestStruct(0_u64) as &dyn Base<u64>).is_some()
+        dyn_dyn_cast!(Base<u64> => TestTrait<u64>, &TestStruct(0_u64) as &dyn Base<u64>).is_ok()
     );
 }
 
@@ -141,10 +155,10 @@ fn test_generic_base_blanket_impl() {
     impl<T: 'static> Base<T> for TestStruct {}
     impl<T: 'static> TestTrait<T> for TestStruct {}
 
-    assert!(dyn_dyn_cast!(Base<u32> => TestTrait<u32>, &TestStruct as &dyn Base<u32>).is_some());
-    assert!(dyn_dyn_cast!(Base<u32> => TestTrait<u64>, &TestStruct as &dyn Base<u32>).is_none());
-    assert!(dyn_dyn_cast!(Base<u64> => TestTrait<u32>, &TestStruct as &dyn Base<u64>).is_none());
-    assert!(dyn_dyn_cast!(Base<u64> => TestTrait<u64>, &TestStruct as &dyn Base<u64>).is_some());
+    assert!(dyn_dyn_cast!(Base<u32> => TestTrait<u32>, &TestStruct as &dyn Base<u32>).is_ok());
+    assert!(dyn_dyn_cast!(Base<u32> => TestTrait<u64>, &TestStruct as &dyn Base<u32>).is_err());
+    assert!(dyn_dyn_cast!(Base<u64> => TestTrait<u32>, &TestStruct as &dyn Base<u64>).is_err());
+    assert!(dyn_dyn_cast!(Base<u64> => TestTrait<u64>, &TestStruct as &dyn Base<u64>).is_ok());
 }
 
 #[test]
@@ -163,7 +177,7 @@ fn test_where_clause_on_base() {
     impl Base<u32> for TestStruct {}
     impl TestTrait for TestStruct {}
 
-    assert!(dyn_dyn_cast!(Base<u32> => TestTrait, &TestStruct as &dyn Base<u32>).is_some());
+    assert!(dyn_dyn_cast!(Base<u32> => TestTrait, &TestStruct as &dyn Base<u32>).is_ok());
 }
 
 #[test]
@@ -189,20 +203,28 @@ fn test_where_clause_on_derived() {
     }
 
     assert_eq!(
-        Some(1234),
-        dyn_dyn_cast!(Base => GenericTrait<u32>, &TestStruct(0_u32) as &dyn Base).map(|b| b.test())
+        Ok(1234),
+        dyn_dyn_cast!(Base => GenericTrait<u32>, &TestStruct(0_u32) as &dyn Base)
+            .map(|b| b.test())
+            .map_err(|_| ())
     );
     assert_eq!(
-        None,
-        dyn_dyn_cast!(Base => GenericTrait<u64>, &TestStruct(0_u32) as &dyn Base).map(|b| b.test())
+        Err(()),
+        dyn_dyn_cast!(Base => GenericTrait<u64>, &TestStruct(0_u32) as &dyn Base)
+            .map(|b| b.test())
+            .map_err(|_| ())
     );
 
     assert_eq!(
-        None,
-        dyn_dyn_cast!(Base => GenericTrait<u32>, &TestStruct(0_u64) as &dyn Base).map(|b| b.test())
+        Err(()),
+        dyn_dyn_cast!(Base => GenericTrait<u32>, &TestStruct(0_u64) as &dyn Base)
+            .map(|b| b.test())
+            .map_err(|_| ())
     );
     assert_eq!(
-        Some(1234),
-        dyn_dyn_cast!(Base => GenericTrait<u64>, &TestStruct(0_u64) as &dyn Base).map(|b| b.test())
+        Ok(1234),
+        dyn_dyn_cast!(Base => GenericTrait<u64>, &TestStruct(0_u64) as &dyn Base)
+            .map(|b| b.test())
+            .map_err(|_| ())
     );
 }
