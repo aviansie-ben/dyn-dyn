@@ -8,7 +8,7 @@ pub struct AnyDynMetadata(*const ());
 
 #[allow(clippy::missing_safety_doc, missing_docs)] // This module is marked doc(hidden)
 impl AnyDynMetadata {
-    pub const unsafe fn downcast<T: DynTrait + ?Sized>(self) -> DynMetadata<T> {
+    pub const unsafe fn downcast<T: DynDynCastTarget + ?Sized>(self) -> DynMetadata<T> {
         mem::transmute(self.0)
     }
 }
@@ -29,7 +29,7 @@ unsafe impl Send for AnyDynMetadata {}
 // SAFETY: Since DynMetadata<T>: Sync for all T, AnyDynMetadata should also be Sync
 unsafe impl Sync for AnyDynMetadata {}
 
-pub trait DynTrait: private::Sealed {
+pub trait DynDynCastTarget: private::Sealed {
     type Root: ?Sized;
 
     fn ptr_into_parts(ptr: NonNull<Self>) -> (NonNull<()>, DynMetadata<Self::Root>);
@@ -38,7 +38,7 @@ pub trait DynTrait: private::Sealed {
     fn meta_for_ty<U: Unsize<Self>>() -> AnyDynMetadata;
 }
 
-impl<M: ?Sized, T: Pointee<Metadata = DynMetadata<M>> + ?Sized> const DynTrait for T {
+impl<M: ?Sized, T: Pointee<Metadata = DynMetadata<M>> + ?Sized> const DynDynCastTarget for T {
     type Root = M;
 
     fn ptr_into_parts(ptr: NonNull<Self>) -> (NonNull<()>, DynMetadata<M>) {

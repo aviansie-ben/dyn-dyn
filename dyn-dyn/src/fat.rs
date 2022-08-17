@@ -1,4 +1,4 @@
-use crate::{DowncastUnchecked, DynDynBase, DynDynTable, DynTrait, GetDynDynTable};
+use crate::{DowncastUnchecked, DynDynBase, DynDynCastTarget, DynDynTable, GetDynDynTable};
 use core::cmp::Ordering;
 use core::fmt::{self, Display, Pointer};
 use core::hash::{Hash, Hasher};
@@ -115,7 +115,7 @@ impl<'a, B: ?Sized + DynDynBase, P: DowncastUnchecked<'a, B> + 'a> DowncastUnche
 {
     type DowncastResult<D: ?Sized + 'a> = <P as DowncastUnchecked<'a, B>>::DowncastResult<D>;
 
-    unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
+    unsafe fn downcast_unchecked<D: ?Sized + DynDynCastTarget>(
         self,
         metadata: DynMetadata<D::Root>,
     ) -> Self::DowncastResult<D> {
