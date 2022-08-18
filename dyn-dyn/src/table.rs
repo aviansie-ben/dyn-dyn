@@ -1,12 +1,40 @@
-use crate::cast_target::{AnyDynMetadata, DynDynCastTarget};
+use crate::cast_target::DynDynCastTarget;
 use cfg_if::cfg_if;
 use core::any::TypeId;
 use core::fmt::{self, Debug};
 use core::marker::Unsize;
+use core::mem;
 use core::ptr::DynMetadata;
 
 #[cfg(doc)]
 use crate::dyn_dyn_cast;
+
+#[derive(Debug, Clone, Copy)]
+#[allow(missing_docs)]
+pub struct AnyDynMetadata(*const ());
+
+#[allow(clippy::missing_safety_doc, missing_docs)] // This module is marked doc(hidden)
+impl AnyDynMetadata {
+    pub const unsafe fn downcast<T: DynDynCastTarget + ?Sized>(self) -> DynMetadata<T> {
+        mem::transmute(self.0)
+    }
+}
+
+impl<T: ?Sized> const From<DynMetadata<T>> for AnyDynMetadata {
+    fn from(meta: DynMetadata<T>) -> Self {
+        // SAFETY: There are no invalid values for *const (), so transmuting to it should never cause UB if DynMetadata<T> is of the same
+        //         size. The only valid usage of this *const () is then to transmute it back to DynMetadata<T>. While this definitely makes
+        //         assumptions about how the standard library implements DynMetadata (which is unfortunate), we should fail to compile if
+        //         that changes rather than invoking UB.
+        unsafe { AnyDynMetadata(mem::transmute(meta)) }
+    }
+}
+
+// SAFETY: Since DynMetadata<T>: Send for all T, AnyDynMetadata should also be Send
+unsafe impl Send for AnyDynMetadata {}
+
+// SAFETY: Since DynMetadata<T>: Sync for all T, AnyDynMetadata should also be Sync
+unsafe impl Sync for AnyDynMetadata {}
 
 cfg_if! {
     if #[cfg(feature = "dynamic-names")] {
