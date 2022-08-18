@@ -13,7 +13,7 @@ use syn::{parse_macro_input, ItemImpl, ItemTrait, Token, Type};
 
 mod base;
 mod cast;
-mod derived;
+mod impl_block;
 
 #[proc_macro]
 pub fn dyn_dyn_cast(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -37,11 +37,11 @@ impl Parse for DerivedTypes {
 }
 
 #[proc_macro_attribute]
-pub fn dyn_dyn_derived(
+pub fn dyn_dyn_impl(
     args: proc_macro::TokenStream,
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    derived::dyn_dyn_derived(
+    impl_block::dyn_dyn_impl(
         parse_macro_input!(args as DerivedTypes).0,
         parse_macro_input!(input as ItemImpl),
     )

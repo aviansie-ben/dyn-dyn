@@ -1,4 +1,4 @@
-use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_derived};
+use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_impl};
 
 #[test]
 fn test_generic_base() {
@@ -10,10 +10,10 @@ fn test_generic_base() {
 
     struct TestStruct;
 
-    #[dyn_dyn_derived(TestTraitA)]
+    #[dyn_dyn_impl(TestTraitA)]
     impl Base<u32> for TestStruct {}
 
-    #[dyn_dyn_derived(TestTraitB)]
+    #[dyn_dyn_impl(TestTraitB)]
     impl Base<u64> for TestStruct {}
 
     impl TestTraitA for TestStruct {}
@@ -37,7 +37,7 @@ fn test_generic_trait() {
 
     struct TestStruct;
 
-    #[dyn_dyn_derived(GenericTrait<u32>, GenericTrait<u64>)]
+    #[dyn_dyn_impl(GenericTrait<u32>, GenericTrait<u64>)]
     impl Base for TestStruct {}
     impl GenericTrait<u32> for TestStruct {
         fn test(&self) -> u32 {
@@ -81,7 +81,7 @@ fn test_generic_trait_from_param() {
 
     struct TestStruct<T: 'static>(T);
 
-    #[dyn_dyn_derived(GenericTrait<T>)]
+    #[dyn_dyn_impl(GenericTrait<T>)]
     impl<T: 'static> Base for TestStruct<T> {}
 
     impl<T: 'static> GenericTrait<T> for TestStruct<T> {
@@ -125,7 +125,7 @@ fn test_generic_base_from_param() {
 
     struct TestStruct<T: 'static>(T);
 
-    #[dyn_dyn_derived(TestTrait<T>)]
+    #[dyn_dyn_impl(TestTrait<T>)]
     impl<T: 'static> Base<T> for TestStruct<T> {}
     impl<T: 'static> TestTrait<T> for TestStruct<T> {}
 
@@ -151,7 +151,7 @@ fn test_generic_base_blanket_impl() {
 
     struct TestStruct;
 
-    #[dyn_dyn_derived(TestTrait<T>)]
+    #[dyn_dyn_impl(TestTrait<T>)]
     impl<T: 'static> Base<T> for TestStruct {}
     impl<T: 'static> TestTrait<T> for TestStruct {}
 
@@ -173,7 +173,7 @@ fn test_where_clause_on_base() {
 
     struct TestStruct;
 
-    #[dyn_dyn_derived(TestTrait)]
+    #[dyn_dyn_impl(TestTrait)]
     impl Base<u32> for TestStruct {}
     impl TestTrait for TestStruct {}
 
@@ -193,7 +193,7 @@ fn test_where_clause_on_derived() {
     where
         T: 'static;
 
-    #[dyn_dyn_derived(GenericTrait<T>)]
+    #[dyn_dyn_impl(GenericTrait<T>)]
     impl<T> Base for TestStruct<T> where T: 'static {}
 
     impl<T: 'static> GenericTrait<T> for TestStruct<T> {

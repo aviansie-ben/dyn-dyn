@@ -9,7 +9,7 @@ use core::ptr::NonNull;
 use stable_deref_trait::StableDeref;
 
 #[allow(clippy::missing_safety_doc)] // This module is marked doc(hidden)
-pub unsafe trait DynDynDerived<B: ?Sized + DynDynBase> {
+pub unsafe trait DynDynImpl<B: ?Sized + DynDynBase> {
     fn get_dyn_dyn_table(&self) -> DynDynTable;
 }
 
