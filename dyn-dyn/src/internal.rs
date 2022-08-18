@@ -1,5 +1,5 @@
 use crate::{
-    DowncastUnchecked, DynDyn, DynDynCastTarget, DynDynRef, DynDynRefMut, DynDynTable,
+    DowncastUnchecked, DynDyn, DynDynBase, DynDynCastTarget, DynDynRef, DynDynRefMut, DynDynTable,
     GetDynDynTable,
 };
 use core::marker::{PhantomData, Unsize};
@@ -10,11 +10,6 @@ use stable_deref_trait::StableDeref;
 
 #[allow(clippy::missing_safety_doc)] // This module is marked doc(hidden)
 pub unsafe trait DynDynDerived<B: ?Sized + DynDynBase> {
-    fn get_dyn_dyn_table(&self) -> DynDynTable;
-}
-
-#[allow(clippy::missing_safety_doc)] // This module is marked doc(hidden)
-pub unsafe trait DynDynBase {
     fn get_dyn_dyn_table(&self) -> DynDynTable;
 }
 

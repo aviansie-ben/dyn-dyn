@@ -9,12 +9,16 @@ use core::ptr::DynMetadata;
 #[cfg(doc)]
 use crate::dyn_dyn_cast;
 
+/// An untyped metadata that corresponds to the metadata that would be used for a trait object.
 #[derive(Debug, Clone, Copy)]
-#[allow(missing_docs)]
 pub struct AnyDynMetadata(*const ());
 
-#[allow(clippy::missing_safety_doc, missing_docs)] // This module is marked doc(hidden)
 impl AnyDynMetadata {
+    /// Downcasts this untyped metadata into typed metadata for a trait object referring to a particular trait.
+    ///
+    /// # Safety
+    ///
+    /// This untyped metadata must have originally been constructed by converting a `DynMetadata<T>`.
     pub const unsafe fn downcast<T: DynDynCastTarget + ?Sized>(self) -> DynMetadata<T> {
         mem::transmute(self.0)
     }
