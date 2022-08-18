@@ -27,7 +27,7 @@ pub mod internal;
 /// Declares a trait as being a base trait for downcasting.
 ///
 /// This macro marks a trait as being a base for dynamic trait object downcasting. All `impl` blocks for this trait will need to use the
-/// [`#[dyn_dyn_derived]`](dyn_dyn_derived) attribute to declare what traits they wish to expose.
+/// [`#[dyn_dyn_impl]`](dyn_dyn_impl) attribute to declare what traits they wish to expose.
 pub use dyn_dyn_macros::dyn_dyn_base;
 
 /// Performs a dynamic downcast of a reference to a trait object where the trait was declared with [`#[dyn_dyn_base]`](dyn_dyn_base).
@@ -48,14 +48,14 @@ pub use dyn_dyn_macros::dyn_dyn_base;
 /// # Examples
 ///
 /// ```rust
-/// # use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_derived};
+/// # use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_impl};
 /// #[dyn_dyn_base]
 /// trait Base {}
 /// trait Trait {}
 ///
 /// struct Struct;
 ///
-/// #[dyn_dyn_derived(Trait)]
+/// #[dyn_dyn_impl(Trait)]
 /// impl Base for Struct {}
 /// impl Trait for Struct {}
 ///
@@ -95,19 +95,19 @@ pub use dyn_dyn_macros::dyn_dyn_cast;
 ///
 /// ```rust
 /// # use core::fmt::Debug;
-/// # use dyn_dyn::{dyn_dyn_base, dyn_dyn_derived};
+/// # use dyn_dyn::{dyn_dyn_base, dyn_dyn_impl};
 /// #[dyn_dyn_base]
 /// trait Base {}
 ///
 /// #[derive(Debug)]
 /// struct Struct;
 ///
-/// #[dyn_dyn_derived(Debug)]
+/// #[dyn_dyn_impl(Debug)]
 /// impl Base for Struct {}
 /// ```
 ///
 /// ```rust
-/// # use dyn_dyn::{dyn_dyn_base, dyn_dyn_derived};
+/// # use dyn_dyn::{dyn_dyn_base, dyn_dyn_impl};
 /// #[dyn_dyn_base]
 /// trait Base {}
 /// trait Trait<T> {}
@@ -116,10 +116,10 @@ pub use dyn_dyn_macros::dyn_dyn_cast;
 ///
 /// impl<T> Trait<T> for Struct<T> {}
 ///
-/// #[dyn_dyn_derived(Trait<T>)]
+/// #[dyn_dyn_impl(Trait<T>)]
 /// impl<T: 'static> Base for Struct<T> {}
 /// ```
-pub use dyn_dyn_macros::dyn_dyn_derived;
+pub use dyn_dyn_macros::dyn_dyn_impl;
 
 pub use cast_target::DynDynCastTarget;
 pub use fat::DynDynFat;

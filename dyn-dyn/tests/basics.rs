@@ -1,4 +1,4 @@
-use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_derived};
+use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_impl};
 use std::fmt;
 use std::rc::Rc;
 
@@ -21,7 +21,7 @@ fn test_vtable_correct() {
 
     struct TestStruct;
 
-    #[dyn_dyn_derived(SubTraitA, SubTraitB)]
+    #[dyn_dyn_impl(SubTraitA, SubTraitB)]
     impl Base for TestStruct {}
 
     impl SubTraitA for TestStruct {
@@ -90,7 +90,7 @@ fn test_data_pointer_correct() {
 
     struct TestStruct;
 
-    #[dyn_dyn_derived(TestTrait)]
+    #[dyn_dyn_impl(TestTrait)]
     impl Base for TestStruct {}
 
     impl TestTrait for TestStruct {
@@ -129,7 +129,7 @@ fn test_from_alloc() {
 
     struct TestStruct;
 
-    #[dyn_dyn_derived(TestTrait)]
+    #[dyn_dyn_impl(TestTrait)]
     impl Base for TestStruct {}
 
     impl TestTrait for TestStruct {
@@ -171,7 +171,7 @@ fn test_external_trait() {
 
     struct TestStruct(&'static str);
 
-    #[dyn_dyn_derived(fmt::Debug)]
+    #[dyn_dyn_impl(fmt::Debug)]
     impl Base for TestStruct {}
 
     impl fmt::Debug for TestStruct {
@@ -194,7 +194,7 @@ fn test_external_type() {
     trait Base {}
     trait TestTrait {}
 
-    #[dyn_dyn_derived(TestTrait)]
+    #[dyn_dyn_impl(TestTrait)]
     impl Base for u32 {}
     impl TestTrait for u32 {}
 
@@ -213,11 +213,11 @@ fn test_multi_base() {
 
     struct TestStruct;
 
-    #[dyn_dyn_derived(TraitA)]
+    #[dyn_dyn_impl(TraitA)]
     impl BaseA for TestStruct {}
     impl TraitA for TestStruct {}
 
-    #[dyn_dyn_derived(TraitB)]
+    #[dyn_dyn_impl(TraitB)]
     impl BaseB for TestStruct {}
     impl TraitB for TestStruct {}
 
@@ -236,7 +236,7 @@ fn test_temporaries_extended() {
 
     struct TestStruct;
 
-    #[dyn_dyn_derived(Trait)]
+    #[dyn_dyn_impl(Trait)]
     impl Base for TestStruct {}
     impl Trait for TestStruct {}
 

@@ -6,10 +6,10 @@
 
 ## Usage
 
-`dyn-dyn` is used by declaring a "base trait" annotated with the `#[dyn_dyn_base]` attribute macro and annotating any `impl` blocks for that trait using the `#[dyn_dyn_derived(...)]` attribute macro. Any reference to the base trait can then be downcast to a reference to the derived trait by using the `dyn_dyn_cast!` macro, like so: 
+`dyn-dyn` is used by declaring a "base trait" annotated with the `#[dyn_dyn_base]` attribute macro and annotating any `impl` blocks for that trait using the `#[dyn_dyn_impl(...)]` attribute macro. Any reference to the base trait can then be downcast to a reference to the derived trait by using the `dyn_dyn_cast!` macro, like so:
 
 ```rust
-use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_derived};
+use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_impl};
 
 #[dyn_dyn_base]
 trait BaseTrait {}
@@ -19,7 +19,7 @@ struct Struct;
 
 impl ExposedTrait for Struct {}
 
-#[dyn_dyn_derived(ExposedTrait)]
+#[dyn_dyn_impl(ExposedTrait)]
 impl BaseTrait for Struct {}
 
 fn main() {
@@ -43,7 +43,7 @@ Currently, `dyn-dyn` only works in nightly versions of Rust due to its use of th
 
 Due to limitations of `TypeId`, `dyn-dyn` can only currently work with types and traits that are `'static`.
 
-In order to be able to construct a way of downcasting into every possible derived trait that a concrete type wishes to expose, the set of traits exposed using the `#[dyn_dyn_derived(...)]` attribute must be finite. That is, it is not possible to expose some generic trait `Trait<T>` for an arbitrary value of `T` (although it is possible to do so if `T` is constrained by a generic argument to the concrete type itself).
+In order to be able to construct a way of downcasting into every possible derived trait that a concrete type wishes to expose, the set of traits exposed using the `#[dyn_dyn_impl(...)]` attribute must be finite. That is, it is not possible to expose some generic trait `Trait<T>` for an arbitrary value of `T` (although it is possible to do so if `T` is constrained by a generic argument to the concrete type or base trait).
 
 ## How it works
 

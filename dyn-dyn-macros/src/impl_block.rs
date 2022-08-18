@@ -5,12 +5,12 @@ use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{GenericParam, ItemImpl, Token, Type};
 
-pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> TokenStream {
+pub fn dyn_dyn_impl(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> TokenStream {
     if input.trait_.is_none() {
         Diagnostic::spanned(
             proc_macro::Span::call_site(),
             Level::Error,
-            "Cannot use dyn_dyn_derived on an inherent impl block",
+            "Cannot use dyn_dyn_impl on an inherent impl block",
         )
         .emit();
         return input.to_token_stream();
@@ -18,7 +18,7 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
         Diagnostic::spanned(
             proc_macro::Span::call_site(),
             Level::Error,
-            "Cannot use dyn_dyn_derived on a negative impl block",
+            "Cannot use dyn_dyn_impl on a negative impl block",
         )
         .emit();
         return input.to_token_stream();
@@ -79,7 +79,7 @@ pub fn dyn_dyn_derived(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> To
             ];
         }
 
-        unsafe impl #impl_generics ::dyn_dyn::internal::DynDynDerived<dyn #trait_> for #self_ty #where_clause {
+        unsafe impl #impl_generics ::dyn_dyn::internal::DynDynImpl<dyn #trait_> for #self_ty #where_clause {
             fn get_dyn_dyn_table(&self) -> ::dyn_dyn::DynDynTable {
                 ::dyn_dyn::DynDynTable::new(&#table_ident #turbo_tok #type_generics::__TABLE[..])
             }

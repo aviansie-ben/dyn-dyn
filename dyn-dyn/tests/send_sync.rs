@@ -1,4 +1,4 @@
-use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_derived};
+use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_impl};
 
 #[dyn_dyn_base]
 trait BaseTrait {}
@@ -8,7 +8,7 @@ trait TestTrait {
 
 struct TestStruct;
 
-#[dyn_dyn_derived(TestTrait)]
+#[dyn_dyn_impl(TestTrait)]
 impl BaseTrait for TestStruct {}
 impl TestTrait for TestStruct {
     fn test(&self) -> u32 {
