@@ -136,9 +136,9 @@ use stable_deref_trait::StableDeref;
 
 /// A type that can be dynamically downcast to other traits using the [`dyn_dyn_cast!`] macro.
 ///
-/// This trait should not be manually implemented by user code. Instead, this trait should be implemented by using the [`#[dyn_dyn_base]`]
-/// attribute on the trait in question. The exact shape of this trait is subject to change at any time, so it generally shouldn't be relied
-/// upon in external code.
+/// This trait should not be manually implemented by user code. Instead, this trait should be implemented by using the
+/// [`#[dyn_dyn_base]`](dyn_dyn_base) attribute on the trait in question. The exact shape of this trait is subject to change at any time, so
+/// it generally shouldn't be relied upon in external code except as a trait bound.
 ///
 /// # Safety
 ///
