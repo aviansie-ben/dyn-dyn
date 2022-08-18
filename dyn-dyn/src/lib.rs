@@ -121,8 +121,9 @@ pub use dyn_dyn_macros::dyn_dyn_cast;
 /// ```
 pub use dyn_dyn_macros::dyn_dyn_derived;
 
+pub use cast_target::DynDynCastTarget;
 pub use fat::DynDynFat;
-pub use table::{DynDynTable, DynDynTableEntry, DynDynTableIterator};
+pub use table::{AnyDynMetadata, DynDynTable, DynDynTableEntry, DynDynTableIterator};
 
 #[cfg(doc)]
 use core::ops::Deref;
@@ -133,8 +134,23 @@ use core::ops::DerefMut;
 use core::ptr::{DynMetadata, NonNull};
 use stable_deref_trait::StableDeref;
 
-use crate::cast_target::DynDynCastTarget;
-use internal::*;
+/// A type that can be dynamically downcast to other traits using the [`dyn_dyn_cast!`] macro.
+///
+/// This trait should not be manually implemented by user code. Instead, this trait should be implemented by using the [`#[dyn_dyn_base]`]
+/// attribute on the trait in question. The exact shape of this trait is subject to change at any time, so it generally shouldn't be relied
+/// upon in external code.
+///
+/// # Safety
+///
+/// The result of calling [`DynDynBase::get_dyn_dyn_table`] on an object through a given base must never change for the lifetime of that
+/// object, even if the object itself is mutated.
+pub unsafe trait DynDynBase {
+    /// Gets the [`DynDynTable`] for this object, for traits exposed via this base trait.
+    ///
+    /// In user code, it is generally preferred to use the implementation of [`GetDynDynTable`] for references rather than calling this
+    /// method directly to avoid potential future breakage.
+    fn get_dyn_dyn_table(&self) -> DynDynTable;
+}
 
 /// Wraps a reference to a pointer implementing [`GetDynDynTable<B>`] and which can be dereferenced to perform the downcast.
 ///

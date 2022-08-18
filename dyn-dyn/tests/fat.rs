@@ -6,8 +6,7 @@ use alloc::boxed::Box;
 use alloc::rc::Rc;
 use core::cell::Cell;
 use core::ops::Deref;
-use dyn_dyn::internal::DynDynBase;
-use dyn_dyn::{dyn_dyn_cast, DynDynFat, DynDynTable, DynDynTableEntry, GetDynDynTable};
+use dyn_dyn::{dyn_dyn_cast, DynDynBase, DynDynFat, DynDynTable, DynDynTableEntry, GetDynDynTable};
 use stable_deref_trait::StableDeref;
 
 // We need the pointers to these two tables to be distinct in order to properly differentiate them, so these cannot be declared as

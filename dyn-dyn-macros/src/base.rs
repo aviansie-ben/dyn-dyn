@@ -56,7 +56,7 @@ pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
             fn __dyn_dyn_get_table(&self) -> ::dyn_dyn::DynDynTable { <Self as ::dyn_dyn::internal::DynDynDerived<dyn #ident #type_generics>>::get_dyn_dyn_table(self) }
         }
 
-        unsafe impl #impl_generics ::dyn_dyn::internal::DynDynBase for dyn #ident #type_generics + '__dyn_dyn_lifetime #where_clause {
+        unsafe impl #impl_generics ::dyn_dyn::DynDynBase for dyn #ident #type_generics + '__dyn_dyn_lifetime #where_clause {
             fn get_dyn_dyn_table(&self) -> ::dyn_dyn::DynDynTable { <Self as #base_trait_ident #type_generics>::__dyn_dyn_get_table(self) }
         }
     };
