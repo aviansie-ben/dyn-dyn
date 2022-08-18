@@ -1,4 +1,4 @@
-use crate::dyn_trait::{AnyDynMetadata, DynTrait};
+use crate::cast_target::{AnyDynMetadata, DynDynCastTarget};
 use cfg_if::cfg_if;
 use core::any::TypeId;
 use core::fmt::{self, Debug};
@@ -61,7 +61,8 @@ pub struct DynDynTableEntry {
 
 impl DynDynTableEntry {
     #[doc(hidden)]
-    pub const fn new<T: Unsize<D>, D: ?Sized + ~const DynTrait + 'static>() -> DynDynTableEntry {
+    pub const fn new<T: Unsize<D>, D: ?Sized + ~const DynDynCastTarget + 'static>(
+    ) -> DynDynTableEntry {
         DynDynTableEntry {
             ty: DynInfo::of::<D>(),
             meta: D::meta_for_ty::<T>(),
@@ -113,7 +114,7 @@ impl DynDynTable {
     }
 
     /// Finds the metadata corresponding to the trait `D` in this table or `None` if no such metadata is present.
-    pub fn find<D: ?Sized + DynTrait + 'static>(&self) -> Option<DynMetadata<D>> {
+    pub fn find<D: ?Sized + DynDynCastTarget + 'static>(&self) -> Option<DynMetadata<D>> {
         self.find_untyped(TypeId::of::<D>()).map(|meta| {
             // SAFETY: This metadata corresponds to the trait D, so we can downcast it
             unsafe { meta.downcast() }

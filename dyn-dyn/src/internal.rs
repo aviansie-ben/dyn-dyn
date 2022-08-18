@@ -1,5 +1,6 @@
 use crate::{
-    DowncastUnchecked, DynDyn, DynDynRef, DynDynRefMut, DynDynTable, DynTrait, GetDynDynTable,
+    DowncastUnchecked, DynDyn, DynDynCastTarget, DynDynRef, DynDynRefMut, DynDynTable,
+    GetDynDynTable,
 };
 use core::marker::{PhantomData, Unsize};
 use core::ops::{Deref, DerefMut};
@@ -44,9 +45,9 @@ pub trait DerefHelperEnd<'a, B: ?Sized + DynDynBase> {
     type Err;
 
     fn get_dyn_dyn_table(&self) -> DynDynTable;
-    unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
+    unsafe fn downcast_unchecked<D: ?Sized + DynDynCastTarget>(
         self,
-        metadata: DynMetadata<D>,
+        metadata: DynMetadata<D::Root>,
     ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D>;
     fn unwrap(self) -> Self::Inner;
     fn into_err(self) -> Self::Err;
@@ -179,9 +180,9 @@ impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>, E, F: FnOnce(T) -> E> DerefHe
         self.0.get_dyn_dyn_table()
     }
 
-    unsafe fn downcast_unchecked<D: ?Sized + DynTrait>(
+    unsafe fn downcast_unchecked<D: ?Sized + DynDynCastTarget>(
         self,
-        metadata: DynMetadata<D>,
+        metadata: DynMetadata<D::Root>,
     ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D> {
         self.0.downcast_unchecked(metadata)
     }
@@ -195,10 +196,10 @@ impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>, E, F: FnOnce(T) -> E> DerefHe
     }
 }
 
-pub fn cast_metadata<T: ?Sized + DynTrait, U: ?Sized + DynTrait>(
-    meta: DynMetadata<T>,
+pub fn cast_metadata<T: ?Sized + DynDynCastTarget, U: ?Sized + DynDynCastTarget>(
+    meta: DynMetadata<T::Root>,
     f: impl Fn(*mut T) -> *mut U,
-) -> DynMetadata<U> {
+) -> DynMetadata<U::Root> {
     U::ptr_into_parts(
         NonNull::new(f(T::ptr_from_parts(NonNull::dangling(), meta).as_ptr())).unwrap(),
     )
