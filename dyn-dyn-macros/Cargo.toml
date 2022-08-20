@@ -7,6 +7,9 @@ version = "0.1.0"
 authors = ["Benjamin Thomas <ben@benthomas.ca>"]
 edition = "2021"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [lib]
 proc-macro = true
 
