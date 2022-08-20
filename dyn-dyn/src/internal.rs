@@ -153,6 +153,34 @@ where
     }
 }
 
+// This impl should never actually be used, since we'll always switch over to DerefHelperResolved when calling __dyn_dyn_check_dyn_dyn. This
+// impl is only actually here to get a friendlier error message if the value passed in does not match any of the checks. If we didn't have
+// this impl, the compiler would complain that DerefHelper<B, T> doesn't implement DerefHelperEnd<'_, B>, but with this impl it instead
+// complains that the input type doesn't implement the necessary traits for DynDyn<'_, B>.
+impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>> DerefHelperEnd<'a, B> for DerefHelper<B, T> {
+    type Inner = T;
+    type Err = T;
+
+    fn get_dyn_dyn_table(&self) -> DynDynTable {
+        unreachable!()
+    }
+
+    unsafe fn downcast_unchecked<D: ?Sized + DynDynCastTarget>(
+        self,
+        _: DynMetadata<D::Root>,
+    ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D> {
+        unreachable!()
+    }
+
+    fn unwrap(self) -> Self::Inner {
+        unreachable!()
+    }
+
+    fn into_err(self) -> Self::Err {
+        unreachable!()
+    }
+}
+
 pub struct DerefHelperResolved<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>, E, F: FnOnce(T) -> E>(
     T,
     F,
