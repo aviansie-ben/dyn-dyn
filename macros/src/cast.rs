@@ -258,16 +258,30 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                 })
             };
 
-            quote!((|__dyn_dyn_input| unsafe {
+            quote!((|__dyn_dyn_input| {
                 #check_markers
 
                 let __dyn_dyn_table = ::dyn_dyn::internal::DerefHelperEnd::<#primary_base>::get_dyn_dyn_table(&__dyn_dyn_input);
                 if true {
                     if let ::core::option::Option::Some(__dyn_dyn_metadata) = __dyn_dyn_table.find::<dyn #tgt_primary_trait>() {
                         #cast_metadata
-                        ::core::result::Result::Ok(::dyn_dyn::internal::DerefHelperEnd::<#primary_base>::downcast_unchecked::<
-                            #tgt_dyn
-                        >(__dyn_dyn_input, __dyn_dyn_metadata))
+
+                        // SAFETY:
+                        //
+                        // By the safety invariants of GetDynDynTable<B>, we know that the returned DynDynTable matches the concrete type of
+                        // the pointee, so attaching it to the pointer is valid. The cast performed by cast_metadata is also known to be
+                        // valid, since check_markers will not compile unless the pointee type of the input implements all of the necessary
+                        // marker traits and the actual metadata cast is performed via use of the "as" operation to cast it using a fake fat
+                        // pointer.
+                        //
+                        // Additionally, the lifetime of the output is constrained by the result of the other side of this if
+                        // statement, where __dyn_dyn_constrain_lifetime is called. By doing this, we ensure that the pointee of the
+                        // output cannot outlive the pointee of the input, so there's no lifetime extension here.
+                        unsafe {
+                            ::core::result::Result::Ok(::dyn_dyn::internal::DerefHelperEnd::<#primary_base>::downcast_unchecked::<
+                                #tgt_dyn
+                            >(__dyn_dyn_input, __dyn_dyn_metadata))
+                        }
                     } else {
                         ::core::result::Result::Err(::dyn_dyn::internal::DerefHelperEnd::<#primary_base>::into_err(
                             __dyn_dyn_input
