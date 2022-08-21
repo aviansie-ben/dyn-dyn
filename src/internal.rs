@@ -207,7 +207,8 @@ impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>, E, F: FnOnce(T) -> E> DerefHe
         self,
         metadata: DynMetadata<D::Root>,
     ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D> {
-        self.0.downcast_unchecked(metadata)
+        // SAFETY: Invariants are passed through
+        unsafe { self.0.downcast_unchecked(metadata) }
     }
 
     fn unwrap(self) -> Self::Inner {
