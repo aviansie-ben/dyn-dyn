@@ -2,6 +2,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(missing_docs)]
 #![warn(clippy::undocumented_unsafe_blocks)]
+#![forbid(unsafe_op_in_unsafe_fn)]
 #![feature(coerce_unsized)]
 #![feature(const_convert)]
 #![feature(const_nonnull_new)]
@@ -267,7 +268,10 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DowncastUnchecked<'a, B>
         self,
         metadata: DynMetadata<D::Root>,
     ) -> &'a D {
-        &*D::ptr_from_parts(NonNull::from(self).cast(), metadata).as_ptr()
+        // SAFETY: Safety invariants for this fn require that the provided metadata is valid for self. Since the input reference has the
+        //         lifetime 'a and the returned reference also has lifetime 'a, this dereference does not extend the reference's lifetime
+        //         and only serves to re-attach the metadata.
+        unsafe { &*D::ptr_from_parts(NonNull::from(self).cast(), metadata).as_ptr() }
     }
 }
 
@@ -297,7 +301,8 @@ where
         self,
         metadata: DynMetadata<D::Root>,
     ) -> Self::DowncastResult<D> {
-        <&T::Target as DowncastUnchecked<B>>::downcast_unchecked(&**self.0, metadata)
+        // SAFETY: Just passing through to the implementation for &'a T.
+        unsafe { <&T::Target as DowncastUnchecked<B>>::downcast_unchecked(&**self.0, metadata) }
     }
 }
 
@@ -319,7 +324,10 @@ impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DowncastUnchecked<'a, B>
         self,
         metadata: DynMetadata<D::Root>,
     ) -> &'a mut D {
-        &mut *D::ptr_from_parts(NonNull::from(self).cast(), metadata).as_ptr()
+        // SAFETY: Safety invariants for this fn require that the provided metadata is valid for self. Since the input reference has the
+        //         lifetime 'a and the returned reference also has lifetime 'a, this dereference does not extend the reference's lifetime
+        //         and only serves to re-attach the metadata.
+        unsafe { &mut *D::ptr_from_parts(NonNull::from(self).cast(), metadata).as_ptr() }
     }
 }
 
@@ -349,7 +357,10 @@ where
         self,
         metadata: DynMetadata<D::Root>,
     ) -> Self::DowncastResult<D> {
-        <&mut T::Target as DowncastUnchecked<B>>::downcast_unchecked(&mut **self.0, metadata)
+        // SAFETY: Just passing through to the implementation for &'a mut T.
+        unsafe {
+            <&mut T::Target as DowncastUnchecked<B>>::downcast_unchecked(&mut **self.0, metadata)
+        }
     }
 }
 
@@ -376,10 +387,15 @@ cfg_if! {
             type DowncastResult<D: ?Sized + 'a> = Box<D>;
 
             unsafe fn downcast_unchecked<D: ?Sized + DynDynCastTarget>(self, metadata: DynMetadata<D::Root>) -> Box<D> {
-                Box::from_raw(
-                    D::ptr_from_parts(NonNull::new_unchecked(Box::into_raw(self)).cast(), metadata)
-                        .as_ptr(),
-                )
+                // SAFETY: 1) NonNull::new_unchecked is fine since the raw pointer of a Box can never be null.
+                //         2) Box::from_raw is fine since the fat pointer passed in has the same data pointer as what we got from
+                //            Box::into_raw and the metadata pointer is guaranteed to be valid by this fn's safety invariants.
+                unsafe {
+                    Box::from_raw(
+                        D::ptr_from_parts(NonNull::new_unchecked(Box::into_raw(self)).cast(), metadata)
+                            .as_ptr(),
+                    )
+                }
             }
         }
 
@@ -400,13 +416,18 @@ cfg_if! {
             type DowncastResult<D: ?Sized + 'a> = Rc<D>;
 
             unsafe fn downcast_unchecked<D: ?Sized + DynDynCastTarget>(self, metadata: DynMetadata<D::Root>) -> Rc<D> {
-                Rc::from_raw(
-                    D::ptr_from_parts(
-                        NonNull::new_unchecked(Rc::into_raw(self) as *mut T).cast(),
-                        metadata,
+                // SAFETY: 1) NonNull::new_unchecked is fine since the raw pointer of a Box can never be null.
+                //         2) Rc::from_raw is fine since the fat pointer passed in has the same data pointer as what we got from
+                //            Rc::into_raw and the metadata pointer is guaranteed to be valid by this fn's safety invariants.
+                unsafe {
+                    Rc::from_raw(
+                        D::ptr_from_parts(
+                            NonNull::new_unchecked(Rc::into_raw(self) as *mut T).cast(),
+                            metadata,
+                        )
+                        .as_ptr(),
                     )
-                    .as_ptr(),
-                )
+                }
             }
         }
 
@@ -427,13 +448,18 @@ cfg_if! {
             type DowncastResult<D: ?Sized + 'a> = Arc<D>;
 
             unsafe fn downcast_unchecked<D: ?Sized + DynDynCastTarget>(self, metadata: DynMetadata<D::Root>) -> Arc<D> {
-                Arc::from_raw(
-                    D::ptr_from_parts(
-                        NonNull::new_unchecked(Arc::into_raw(self) as *mut T).cast(),
-                        metadata,
+                // SAFETY: 1) NonNull::new_unchecked is fine since the raw pointer of a Box can never be null.
+                //         2) Arc::from_raw is fine since the fat pointer passed in has the same data pointer as what we got from
+                //            Arc::into_raw and the metadata pointer is guaranteed to be valid by this fn's safety invariants.
+                unsafe {
+                    Arc::from_raw(
+                        D::ptr_from_parts(
+                            NonNull::new_unchecked(Arc::into_raw(self) as *mut T).cast(),
+                            metadata,
+                        )
+                        .as_ptr(),
                     )
-                    .as_ptr(),
-                )
+                }
             }
         }
     }

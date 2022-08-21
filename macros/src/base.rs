@@ -54,12 +54,14 @@ pub fn dyn_dyn_base(_args: TokenStream, mut input: ItemTrait) -> TokenStream {
             fn __dyn_dyn_get_table(&self) -> ::dyn_dyn::DynDynTable;
         }
 
+        // SAFETY: This is just a straightforward passthrough, see the SAFETY comment for DynDynImpl impls in dyn_dyn_impl for more details
         unsafe impl #base_trait_impl_generics #base_trait_ident #type_generics for __dyn_dyn_T #where_clause {
             fn __dyn_dyn_get_table(&self) -> ::dyn_dyn::DynDynTable {
                 <Self as ::dyn_dyn::internal::DynDynImpl<dyn #ident #type_generics>>::get_dyn_dyn_table(self)
             }
         }
 
+        // SAFETY: This is just a straightforward passthrough, see the SAFETY comment for DynDynImpl impls in dyn_dyn_impl for more details
         unsafe impl #impl_generics ::dyn_dyn::DynDynBase for dyn #ident #type_generics + '__dyn_dyn_lifetime #where_clause {
             fn get_dyn_dyn_table(&self) -> ::dyn_dyn::DynDynTable {
                 <Self as #base_trait_ident #type_generics>::__dyn_dyn_get_table(self)

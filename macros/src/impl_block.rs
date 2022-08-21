@@ -79,6 +79,9 @@ pub fn dyn_dyn_impl(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> Token
             ];
         }
 
+        // SAFETY: The returned DynDynTable does not depend on data in self at all, so get_dyn_dyn_table will always return the same table
+        //         as long as the metadata pointer is not changed in an unsafe way. All entries in the table have valid metadata for this
+        //         type since they were retrieved by performing a trivial unsized coercion on a *const Self.
         unsafe impl #impl_generics ::dyn_dyn::internal::DynDynImpl<dyn #trait_> for #self_ty #where_clause {
             fn get_dyn_dyn_table(&self) -> ::dyn_dyn::DynDynTable {
                 ::dyn_dyn::DynDynTable::new(&#table_ident #turbo_tok #type_generics::__TABLE[..])

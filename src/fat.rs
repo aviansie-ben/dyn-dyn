@@ -119,7 +119,8 @@ impl<'a, B: ?Sized + DynDynBase, P: DowncastUnchecked<'a, B> + 'a> DowncastUnche
         self,
         metadata: DynMetadata<D::Root>,
     ) -> Self::DowncastResult<D> {
-        self.ptr.downcast_unchecked(metadata)
+        // SAFETY: Just passing through to the pointer's implementation.
+        unsafe { self.ptr.downcast_unchecked(metadata) }
     }
 }
 
