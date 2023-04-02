@@ -53,6 +53,7 @@ cfg_if! {
         #[derive(Debug, Clone, Copy)]
         struct TypeName;
 
+        #[allow(clippy::extra_unused_type_parameters)]
         const fn type_name<T: ?Sized>() -> TypeName { TypeName }
     }
 }

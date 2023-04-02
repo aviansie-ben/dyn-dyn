@@ -24,9 +24,9 @@ pub fn dyn_dyn_impl(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> Token
         return input.to_token_stream();
     }
 
-    let self_ty = input.self_ty.clone();
+    let self_ty = &input.self_ty;
     let trait_ = input.trait_.clone().unwrap().1;
-    let generics = input.generics.clone();
+    let generics = &input.generics;
     let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
 
     let mut bad_spans = vec![];
