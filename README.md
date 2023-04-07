@@ -1,6 +1,6 @@
 # `dyn-dyn`
 
-[![Tests](https://img.shields.io/github/workflow/status/aviansie-ben/dyn-dyn/Tests/master)](https://github.com/aviansie-ben/dyn-dyn/actions/workflows/check.yml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/aviansie-ben/dyn-dyn/check.yml?branch=master)](https://github.com/aviansie-ben/dyn-dyn/actions/workflows/check.yml)
 [![Crates.io](https://img.shields.io/crates/v/dyn-dyn)](https://crates.io/crates/dyn-dyn)
 [![docs.rs](https://img.shields.io/docsrs/dyn-dyn)](https://docs.rs/dyn-dyn/)
 
