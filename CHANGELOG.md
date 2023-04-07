@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 0.1.1
+
+- Fixed to build properly with newer Nightlies that require `#[const_trait]`
+- Implemented downcasting of DST types containing a base trait if a manual unsafe `DynDynBase` implementation is provided
+- Improved error messages for common mistakes in `dyn_dyn_cast!`
+
 ## Version 0.1.0
 
 - Implemented downcasting of smart pointers by reworking the `DynDyn` trait
