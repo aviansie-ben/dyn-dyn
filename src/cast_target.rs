@@ -2,6 +2,7 @@ use core::marker::Unsize;
 use core::ptr::{self, DynMetadata, NonNull, Pointee};
 
 /// A type whose pointer metadata can be stored in a [`DynDynTable`](crate::DynDynTable).
+#[const_trait]
 pub trait DynDynCastTarget: private::Sealed {
     /// The root type that the trait object metadata is for.
     type Root: ?Sized;

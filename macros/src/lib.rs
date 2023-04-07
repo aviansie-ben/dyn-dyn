@@ -2,6 +2,7 @@
 //! instead, the versions of these macros re-exported from the `dyn-dyn` crate itself should be used.
 
 #![forbid(unsafe_code)] // We generate unsafe code, but don't want to accidentally use unsafe code at compile-time
+#![allow(clippy::needless_borrowed_reference)]
 #![feature(proc_macro_diagnostic)]
 
 extern crate proc_macro;

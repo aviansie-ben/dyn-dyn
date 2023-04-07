@@ -2,6 +2,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(missing_docs)]
 #![warn(clippy::undocumented_unsafe_blocks)]
+#![allow(clippy::needless_borrowed_reference)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![feature(coerce_unsized)]
 #![feature(const_convert)]
@@ -11,7 +12,6 @@
 #![feature(const_type_id)]
 #![cfg_attr(feature = "dynamic-names", feature(const_type_name))]
 #![feature(doc_auto_cfg)]
-#![feature(generic_associated_types)]
 #![feature(ptr_metadata)]
 #![feature(unsize)]
 
