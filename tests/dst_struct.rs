@@ -21,6 +21,7 @@ impl Trait for StructB {
     }
 }
 
+#[allow(dead_code)]
 struct DstStruct<T: ?Sized>(u32, T);
 
 unsafe impl<B: ?Sized + DynDynBase> DynDynBase for DstStruct<B> {
