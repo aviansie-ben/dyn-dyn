@@ -14,6 +14,15 @@ use crate::dyn_dyn_cast;
 pub struct AnyDynMetadata(*const ());
 
 impl AnyDynMetadata {
+    /// Upcasts this typed metadata into untyped metadata.
+    pub const fn upcast<T: ?Sized>(meta: DynMetadata<T>) -> AnyDynMetadata {
+        // SAFETY: There are no invalid values for *const (), so transmuting to it should never cause UB if DynMetadata<T> is of the same
+        //         size. The only valid usage of this *const () is then to transmute it back to DynMetadata<T>. While this definitely makes
+        //         assumptions about how the standard library implements DynMetadata (which is unfortunate), we should fail to compile if
+        //         that changes rather than invoking UB.
+        unsafe { AnyDynMetadata(mem::transmute(meta)) }
+    }
+
     /// Downcasts this untyped metadata into typed metadata for a trait object referring to a particular trait.
     ///
     /// # Safety
@@ -26,13 +35,9 @@ impl AnyDynMetadata {
     }
 }
 
-impl<T: ?Sized> const From<DynMetadata<T>> for AnyDynMetadata {
+impl<T: ?Sized> From<DynMetadata<T>> for AnyDynMetadata {
     fn from(meta: DynMetadata<T>) -> Self {
-        // SAFETY: There are no invalid values for *const (), so transmuting to it should never cause UB if DynMetadata<T> is of the same
-        //         size. The only valid usage of this *const () is then to transmute it back to DynMetadata<T>. While this definitely makes
-        //         assumptions about how the standard library implements DynMetadata (which is unfortunate), we should fail to compile if
-        //         that changes rather than invoking UB.
-        unsafe { AnyDynMetadata(mem::transmute(meta)) }
+        AnyDynMetadata::upcast(meta)
     }
 }
 
@@ -100,7 +105,7 @@ impl DynDynTableEntry {
     ) -> DynDynTableEntry {
         DynDynTableEntry {
             ty: DynInfo::of::<D>(),
-            meta: D::meta_for_ty::<T>().into(),
+            meta: AnyDynMetadata::upcast(D::meta_for_ty::<T>()),
         }
     }
 

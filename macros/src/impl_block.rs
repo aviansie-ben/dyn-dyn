@@ -1,4 +1,4 @@
-use proc_macro::{Diagnostic, Level};
+use proc_macro::{Diagnostic, Level, Span};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::punctuated::Punctuated;
@@ -47,7 +47,7 @@ pub fn dyn_dyn_impl(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> Token
         return input.to_token_stream();
     }
 
-    let table_ident = format_ident!("__dyn_dyn_{}_DynTable", self_ty.span().start().line);
+    let table_ident = format_ident!("__dyn_dyn_{}_DynTable", Span::call_site().line());
     let num_table_entries = args.len();
 
     let turbo_tok = if input.generics.params.is_empty() {

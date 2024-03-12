@@ -4,6 +4,7 @@
 #![forbid(unsafe_code)] // We generate unsafe code, but don't want to accidentally use unsafe code at compile-time
 #![allow(clippy::needless_borrowed_reference)]
 #![feature(proc_macro_diagnostic)]
+#![feature(proc_macro_span)]
 
 extern crate proc_macro;
 
