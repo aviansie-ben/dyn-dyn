@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.1.2
+
+- Fixed to build properly with newer Nightlies that removed the `const_convert` feature
+- Improved the macro hygiene of `dyn_dyn_impl` so it can now be used within macros
+
 ## Version 0.1.1
 
 - Fixed to build properly with newer Nightlies that require `#[const_trait]`
