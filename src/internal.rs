@@ -4,8 +4,7 @@ use crate::{
 };
 use core::marker::{PhantomData, Unsize};
 use core::ops::{Deref, DerefMut};
-use core::ptr::DynMetadata;
-use core::ptr::NonNull;
+use core::ptr::{DynMetadata, NonNull, Pointee};
 use stable_deref_trait::StableDeref;
 
 #[allow(clippy::missing_safety_doc)] // This module is marked doc(hidden)
@@ -40,9 +39,9 @@ pub trait DerefHelperEnd<'a, B: ?Sized + DynDynBase> {
     type Err;
 
     fn get_dyn_dyn_table(&self) -> DynDynTable;
-    unsafe fn downcast_unchecked<D: ?Sized + DynDynCastTarget>(
+    unsafe fn downcast_unchecked<D: ?Sized + Pointee>(
         self,
-        metadata: DynMetadata<D::Root>,
+        metadata: <D as Pointee>::Metadata,
     ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D>;
     fn unwrap(self) -> Self::Inner;
     fn into_err(self) -> Self::Err;
@@ -165,9 +164,9 @@ impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>> DerefHelperEnd<'a, B> for Der
         unreachable!()
     }
 
-    unsafe fn downcast_unchecked<D: ?Sized + DynDynCastTarget>(
+    unsafe fn downcast_unchecked<D: ?Sized + Pointee>(
         self,
-        _: DynMetadata<D::Root>,
+        _: <D as Pointee>::Metadata,
     ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D> {
         unreachable!()
     }
@@ -203,9 +202,9 @@ impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>, E, F: FnOnce(T) -> E> DerefHe
         self.0.get_dyn_dyn_table()
     }
 
-    unsafe fn downcast_unchecked<D: ?Sized + DynDynCastTarget>(
+    unsafe fn downcast_unchecked<D: ?Sized + Pointee>(
         self,
-        metadata: DynMetadata<D::Root>,
+        metadata: <D as Pointee>::Metadata,
     ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D> {
         // SAFETY: Invariants are passed through
         unsafe { self.0.downcast_unchecked(metadata) }
