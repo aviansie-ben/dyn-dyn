@@ -205,7 +205,7 @@ impl<'a, B: ?Sized + DynDynBase, T: GetDynDynTable<B> + StableDeref + DerefMut>
 ///   [`GetDynDynTable::get_dyn_dyn_table`].
 /// - If this type implements [`Deref`], then the returned table must be equivalent to calling [`GetDynDynTable::get_dyn_dyn_table`] on a
 ///   reference returned by calling [`Deref::deref`].
-/// - If this type implements [`DowncastUnchecked<B>`], then the result of calling [`DowncastUnchecked::downcast_unchecked`] with
+/// - If this type implements [`DowncastUnchecked`], then the result of calling [`DowncastUnchecked::downcast_unchecked`] with
 ///   metadata retrieved from the table returned by calling [`GetDynDynTable::get_dyn_dyn_table`] on this pointer shall be valid and safe to
 ///   use.
 pub unsafe trait GetDynDynTable<B: ?Sized + DynDynBase> {
@@ -218,7 +218,7 @@ pub unsafe trait GetDynDynTable<B: ?Sized + DynDynBase> {
 }
 
 /// A pointer to an object that can be unsafely downcast to point to another type.
-pub trait DowncastUnchecked<'a, B: ?Sized + DynDynBase> {
+pub trait DowncastUnchecked<'a> {
     /// The result of downcasting this pointer to point to the type `D`. Note that this type need not have the same outer wrapper as the
     /// type implementing `DowncastUnchecked`, since the result of the downcast may involve coercions and dereferences.
     type DowncastResult<D: ?Sized + 'a>;
@@ -243,12 +243,9 @@ pub trait DowncastUnchecked<'a, B: ?Sized + DynDynBase> {
 }
 
 /// A pointer object that can be safely downcast to refer to other trait types by using the `dyn_dyn_cast!` macro.
-pub trait DynDyn<'a, B: ?Sized + DynDynBase>: GetDynDynTable<B> + DowncastUnchecked<'a, B> {}
+pub trait DynDyn<'a, B: ?Sized + DynDynBase>: GetDynDynTable<B> + DowncastUnchecked<'a> {}
 
-impl<'a, B: ?Sized + DynDynBase, T: GetDynDynTable<B> + DowncastUnchecked<'a, B>> DynDyn<'a, B>
-    for T
-{
-}
+impl<'a, B: ?Sized + DynDynBase, T: GetDynDynTable<B> + DowncastUnchecked<'a>> DynDyn<'a, B> for T {}
 
 // SAFETY: The referent of a shared reference will never change unexpectedly and the table returned matches that returned by dereferencing
 //         it by definition. The DowncastUnchecked implementation is also a simple cast via converting to/from a pointer and so should be
@@ -261,7 +258,7 @@ unsafe impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> GetDynDynTable<B>
     }
 }
 
-impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DowncastUnchecked<'a, B> for &'a T {
+impl<'a, T: ?Sized> DowncastUnchecked<'a> for &'a T {
     type DowncastResult<D: ?Sized + 'a> = &'a D;
 
     unsafe fn downcast_unchecked<D: ?Sized + Pointee>(
@@ -290,7 +287,7 @@ where
     }
 }
 
-impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B> + StableDeref + 'a> DowncastUnchecked<'a, B>
+impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B> + StableDeref + 'a> DowncastUnchecked<'a>
     for DynDynRef<'a, B, T>
 where
     T::Target: Unsize<B>,
@@ -302,7 +299,7 @@ where
         metadata: <D as Pointee>::Metadata,
     ) -> Self::DowncastResult<D> {
         // SAFETY: Just passing through to the implementation for &'a T.
-        unsafe { <&T::Target as DowncastUnchecked<B>>::downcast_unchecked(&**self.0, metadata) }
+        unsafe { <&T::Target as DowncastUnchecked>::downcast_unchecked(&**self.0, metadata) }
     }
 }
 
@@ -317,7 +314,7 @@ unsafe impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> GetDynDynTable<B>
     }
 }
 
-impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> DowncastUnchecked<'a, B> for &'a mut T {
+impl<'a, T: ?Sized> DowncastUnchecked<'a> for &'a mut T {
     type DowncastResult<D: ?Sized + 'a> = &'a mut D;
 
     unsafe fn downcast_unchecked<D: ?Sized + Pointee>(
@@ -347,7 +344,7 @@ where
 }
 
 impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B> + StableDeref + DerefMut + 'a>
-    DowncastUnchecked<'a, B> for DynDynRefMut<'a, B, T>
+    DowncastUnchecked<'a> for DynDynRefMut<'a, B, T>
 where
     T::Target: Unsize<B>,
 {
@@ -359,7 +356,7 @@ where
     ) -> Self::DowncastResult<D> {
         // SAFETY: Just passing through to the implementation for &'a mut T.
         unsafe {
-            <&mut T::Target as DowncastUnchecked<B>>::downcast_unchecked(&mut **self.0, metadata)
+            <&mut T::Target as DowncastUnchecked>::downcast_unchecked(&mut **self.0, metadata)
         }
     }
 }
@@ -381,7 +378,7 @@ cfg_if! {
             }
         }
 
-        impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B> + 'a> DowncastUnchecked<'a, B>
+        impl<'a, T: ?Sized + 'a> DowncastUnchecked<'a>
             for Box<T>
         {
             type DowncastResult<D: ?Sized + 'a> = Box<D>;
@@ -409,7 +406,7 @@ cfg_if! {
             }
         }
 
-        impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B> + 'a> DowncastUnchecked<'a, B>
+        impl<'a, T: ?Sized + 'a> DowncastUnchecked<'a>
             for Rc<T>
         {
             type DowncastResult<D: ?Sized + 'a> = Rc<D>;
@@ -440,7 +437,7 @@ cfg_if! {
             }
         }
 
-        impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B> + 'a> DowncastUnchecked<'a, B>
+        impl<'a, T: ?Sized + 'a> DowncastUnchecked<'a>
             for Arc<T>
         {
             type DowncastResult<D: ?Sized + 'a> = Arc<D>;

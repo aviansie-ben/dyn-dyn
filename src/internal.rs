@@ -1,3 +1,8 @@
+//! This module contains internal implementation details that are meant to be used as part of the
+//! implementation of the macros. They are marked as public to allow them to be used from the
+//! expansions, but they are not actually part of the public API of this crate and should not be
+//! directly relied upon by external code.
+
 use crate::{
     DowncastUnchecked, DynDyn, DynDynBase, DynDynCastTarget, DynDynRef, DynDynRefMut, DynDynTable,
     GetDynDynTable,
@@ -6,6 +11,23 @@ use core::marker::{PhantomData, Unsize};
 use core::ops::{Deref, DerefMut};
 use core::ptr::{DynMetadata, NonNull, Pointee};
 use stable_deref_trait::StableDeref;
+
+// This special proxy trait is needed for the __dyn_dyn_constrain_lifetime method which is
+// generated internally by the dyn_dyn_cast! macro to constrain the lifetime of its result. While
+// it seems like we should be able to use DynDyn and DowncastUnchecked directly, this actually
+// results in compilation errors.
+//
+// If (dyn Base + '__dyn_dyn_life) doesn't show up in the return type in a very particular way, the
+// compiler will complain about '__dyn_dyn_life not outliving 'static when the base trait itself is
+// marked as 'static. This proxy trait allows the return type to still include the base trait as
+// part of writing it out to avoid this.
+pub trait DynDynConstrainLifetime<'a, B: ?Sized + DynDynBase> {
+    type Result<D: ?Sized + 'a>;
+}
+
+impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>> DynDynConstrainLifetime<'a, B> for T {
+    type Result<D: ?Sized + 'a> = <T as DowncastUnchecked<'a>>::DowncastResult<D>;
+}
 
 #[allow(clippy::missing_safety_doc)] // This module is marked doc(hidden)
 pub unsafe trait DynDynImpl<B: ?Sized + DynDynBase> {
@@ -42,7 +64,7 @@ pub trait DerefHelperEnd<'a, B: ?Sized + DynDynBase> {
     unsafe fn downcast_unchecked<D: ?Sized + Pointee>(
         self,
         metadata: <D as Pointee>::Metadata,
-    ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D>;
+    ) -> <Self::Inner as DowncastUnchecked<'a>>::DowncastResult<D>;
     fn unwrap(self) -> Self::Inner;
     fn into_err(self) -> Self::Err;
     fn typecheck(&self) -> &<Self::Inner as GetDynDynTable<B>>::DynTarget {
@@ -167,7 +189,7 @@ impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>> DerefHelperEnd<'a, B> for Der
     unsafe fn downcast_unchecked<D: ?Sized + Pointee>(
         self,
         _: <D as Pointee>::Metadata,
-    ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D> {
+    ) -> <Self::Inner as DowncastUnchecked<'a>>::DowncastResult<D> {
         unreachable!()
     }
 
@@ -205,7 +227,7 @@ impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>, E, F: FnOnce(T) -> E> DerefHe
     unsafe fn downcast_unchecked<D: ?Sized + Pointee>(
         self,
         metadata: <D as Pointee>::Metadata,
-    ) -> <Self::Inner as DowncastUnchecked<'a, B>>::DowncastResult<D> {
+    ) -> <Self::Inner as DowncastUnchecked<'a>>::DowncastResult<D> {
         // SAFETY: Invariants are passed through
         unsafe { self.0.downcast_unchecked(metadata) }
     }

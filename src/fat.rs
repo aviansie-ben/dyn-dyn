@@ -110,10 +110,10 @@ unsafe impl<B: ?Sized + DynDynBase, P: GetDynDynTable<B>> GetDynDynTable<B> for 
     }
 }
 
-impl<'a, B: ?Sized + DynDynBase, P: DowncastUnchecked<'a, B> + 'a> DowncastUnchecked<'a, B>
+impl<'a, B: ?Sized + DynDynBase, P: DowncastUnchecked<'a> + 'a> DowncastUnchecked<'a>
     for DynDynFat<B, P>
 {
-    type DowncastResult<D: ?Sized + 'a> = <P as DowncastUnchecked<'a, B>>::DowncastResult<D>;
+    type DowncastResult<D: ?Sized + 'a> = <P as DowncastUnchecked<'a>>::DowncastResult<D>;
 
     unsafe fn downcast_unchecked<D: ?Sized + Pointee>(
         self,
