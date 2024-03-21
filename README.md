@@ -31,6 +31,8 @@ fn main() {
 
     assert!(dyn_dyn_cast!(BaseTrait => ExposedTrait, &s).is_ok());
     assert!(dyn_dyn_cast!(mut BaseTrait => ExposedTrait, &mut s).is_ok());
+
+    #[cfg(feature = "alloc")]
     assert!(dyn_dyn_cast!(move BaseTrait => ExposedTrait, Box::new(s)).is_ok());
 }
 ```

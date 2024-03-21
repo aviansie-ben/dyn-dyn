@@ -72,6 +72,7 @@ pub use dyn_dyn_macros::dyn_dyn_base;
 ///     dyn_dyn_cast!(Base + Send => Trait + Send, r)
 /// }
 ///
+/// # #[cfg(feature = "alloc")]
 /// fn downcast_box(r: Box<dyn Base>) -> Result<Box<dyn Trait>, Box<dyn Base>> {
 ///     dyn_dyn_cast!(move Base => Trait, r)
 /// }
@@ -82,6 +83,7 @@ pub use dyn_dyn_macros::dyn_dyn_base;
 ///     assert!(downcast(&s).is_ok());
 ///     assert!(downcast_mut(&mut s).is_ok());
 ///     assert!(downcast_with_auto(&s).is_ok());
+///     # #[cfg(feature = "alloc")]
 ///     assert!(downcast_box(Box::new(s)).is_ok());
 /// }
 /// ```
