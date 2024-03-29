@@ -1,6 +1,5 @@
 use dyn_dyn::{dyn_dyn_base, dyn_dyn_cast, dyn_dyn_impl};
 use std::fmt;
-use std::rc::Rc;
 
 #[test]
 fn test_vtable_correct() {
@@ -119,8 +118,11 @@ fn test_data_pointer_correct() {
     );
 }
 
+#[cfg(feature = "alloc")]
 #[test]
 fn test_from_alloc() {
+    use std::rc::Rc;
+
     #[dyn_dyn_base]
     trait Base {}
     trait TestTrait {
@@ -139,26 +141,42 @@ fn test_from_alloc() {
     }
 
     let mut test_box = Box::new(TestStruct);
+    let box_ptr = &*test_box as *const _;
 
     assert_eq!(
-        Ok(&*test_box as *const _),
+        Ok(box_ptr),
         dyn_dyn_cast!(Base => TestTrait, &test_box)
             .map(|t: &dyn TestTrait| t.test())
             .map_err(|_| ())
     );
 
     assert_eq!(
-        Ok(&mut *test_box as *const _),
+        Ok(box_ptr),
         dyn_dyn_cast!(mut Base => TestTrait, &mut test_box)
             .map(|t: &mut dyn TestTrait| t.test())
             .map_err(|_| ())
     );
 
+    assert_eq!(
+        Ok(box_ptr),
+        dyn_dyn_cast!(move Base => TestTrait, test_box)
+            .map(|t: Box<dyn TestTrait>| t.test())
+            .map_err(|_| ())
+    );
+
     let test_rc = Rc::new(TestStruct);
+    let rc_ptr = &*test_rc as *const _;
 
     assert_eq!(
-        Ok(&*test_rc as *const _),
+        Ok(rc_ptr),
         dyn_dyn_cast!(Base => TestTrait, &test_rc)
+            .map(|t| t.test())
+            .map_err(|_| ())
+    );
+
+    assert_eq!(
+        Ok(rc_ptr),
+        dyn_dyn_cast!(move Base => TestTrait, test_rc)
             .map(|t| t.test())
             .map_err(|_| ())
     );
@@ -246,4 +264,24 @@ fn test_temporaries_extended() {
 
     assert!(dyn_dyn_cast!(Base => Trait, &return_temporary() as &dyn Base).is_ok());
     assert!(dyn_dyn_cast!(mut Base => Trait, &mut return_temporary() as &mut dyn Base).is_ok());
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn test_static_lifetime_on_base() {
+    #[dyn_dyn_base]
+    trait Base: 'static {}
+    trait Trait {}
+
+    struct TestStruct;
+
+    #[dyn_dyn_impl(Trait)]
+    impl Base for TestStruct {}
+    impl Trait for TestStruct {}
+
+    let mut boxed = Box::new(TestStruct);
+
+    assert!(dyn_dyn_cast!(Base => Trait, &boxed).is_ok());
+    assert!(dyn_dyn_cast!(mut Base => Trait, &mut boxed).is_ok());
+    assert!(dyn_dyn_cast!(move Base => Trait, boxed).is_ok());
 }

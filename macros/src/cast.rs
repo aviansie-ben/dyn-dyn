@@ -243,12 +243,12 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                     fn __dyn_dyn_constrain_lifetime<
                         '__dyn_dyn_ref,
                         '__dyn_dyn_life,
-                        T: ::dyn_dyn::DynDyn<'__dyn_dyn_ref, #base_with_lifetime>
+                        T: ::dyn_dyn::internal::DynDynConstrainLifetime<'__dyn_dyn_ref, #base_with_lifetime>
                     >(
                         _: T
                     ) -> <
-                        T as ::dyn_dyn::DowncastUnchecked<'__dyn_dyn_ref, #base_with_lifetime>
-                    >::DowncastResult<#tgt_with_lifetime> {
+                        T as ::dyn_dyn::internal::DynDynConstrainLifetime<'__dyn_dyn_ref, #base_with_lifetime>
+                    >::Result<#tgt_with_lifetime> {
                         unreachable!()
                     }
 
