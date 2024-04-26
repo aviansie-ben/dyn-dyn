@@ -206,8 +206,9 @@ fn test_external_trait() {
     );
 }
 
-#[test]
-fn test_external_type() {
+mod test_external_type {
+    use super::*;
+
     #[dyn_dyn_base]
     trait Base {}
     trait TestTrait {}
@@ -216,7 +217,10 @@ fn test_external_type() {
     impl Base for u32 {}
     impl TestTrait for u32 {}
 
-    assert!(dyn_dyn_cast!(Base => TestTrait, &0_u32 as &dyn Base).is_ok());
+    #[test]
+    fn test_external_type() {
+        assert!(dyn_dyn_cast!(Base => TestTrait, &0_u32 as &dyn Base).is_ok());
+    }
 }
 
 #[test]

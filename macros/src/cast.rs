@@ -9,8 +9,8 @@ use syn::{bracketed, Expr, Token, TraitBound, Type, TypeParamBound};
 
 #[derive(Copy, Clone)]
 pub enum DynDynCastType {
-    Mut(Token![mut]),
-    Move(Token![move]),
+    Mut(#[allow(dead_code)] Token![mut]),
+    Move(#[allow(dead_code)] Token![move]),
     Ref,
 }
 
