@@ -4,7 +4,7 @@ use core::any::TypeId;
 use core::fmt::{self, Debug};
 use core::marker::Unsize;
 use core::mem;
-use core::ptr::DynMetadata;
+use core::ptr::{self, DynMetadata, Pointee};
 
 #[cfg(doc)]
 use crate::dyn_dyn_cast;
@@ -100,12 +100,23 @@ pub struct DynDynTableEntry {
 }
 
 impl DynDynTableEntry {
+    const fn meta_for_ty<
+        T: Unsize<D>,
+        D: ?Sized + Pointee<Metadata = DynMetadata<M>>,
+        M: ?Sized,
+    >() -> DynMetadata<M> {
+        ptr::metadata(ptr::null::<T>() as *const D)
+    }
+
     #[doc(hidden)]
-    pub const fn new<T: Unsize<D>, D: ?Sized + ~const DynDynCastTarget + 'static>(
-    ) -> DynDynTableEntry {
+    pub const fn new<
+        T: Unsize<D>,
+        D: ?Sized + Pointee<Metadata = DynMetadata<M>> + 'static,
+        M: ?Sized,
+    >() -> DynDynTableEntry {
         DynDynTableEntry {
             ty: DynInfo::of::<D>(),
-            meta: AnyDynMetadata::upcast(D::meta_for_ty::<T>()),
+            meta: AnyDynMetadata::upcast(Self::meta_for_ty::<T, D, M>()),
         }
     }
 

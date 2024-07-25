@@ -11,7 +11,6 @@
 #![feature(const_type_id)]
 #![cfg_attr(feature = "dynamic-names", feature(const_type_name))]
 #![feature(doc_auto_cfg)]
-#![feature(effects)]
 #![feature(ptr_metadata)]
 #![feature(unsize)]
 
