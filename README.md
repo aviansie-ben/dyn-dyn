@@ -35,12 +35,6 @@ assert!(dyn_dyn_cast!(mut BaseTrait => ExposedTrait, &mut s).is_ok());
 assert!(dyn_dyn_cast!(move BaseTrait => ExposedTrait, Box::new(s)).is_ok());
 ```
 
-## Using `dyn-dyn` with auto traits
-
-Unlike many other downcasting libraries, `dyn-dyn` allows downcasting operations to preserve extra marker traits on the trait object. For instance, it is possible to perform a downcast using `dyn_dyn_cast!(BaseTrait + Send => ExposedTrait + Send, ...)` to preserve an extra `Send` bound. Additionally, these marker traits can also be derived from supertraits of the base trait: so if `BaseTrait: Send`, then it is also possible to do `dyn_dyn_cast!(BaseTrait => ExposedTrait + Send, ...)`.
-
-This works for any auto traits, including those declared by other crates using the unstable `auto_traits` feature.
-
 ## Limitations
 
 Currently, `dyn-dyn` only works in nightly versions of Rust due to its use of the unstable `generic_associated_types`, `ptr_metadata`, and `unsize` features, as well as due to its use of several standard library features in `const` contexts.
@@ -52,5 +46,3 @@ In order to be able to construct a way of downcasting into every possible derive
 ## How it works
 
 `dyn-dyn` works by creating a table that maps various `TypeId`s corresponding to traits into the vtable pointer they use for a particular concrete type. This table is then exposed via a hidden supertrait of the base trait, allowing the `dyn_dyn_cast!` macro to dynamically look up the metadata corresponding to a particular trait object. This metadata is then reattached to the pointer using the unstable `ptr_metadata` feature to create a reference to the derived trait object type.
-
-Extra bounds are handled by using the unstable `unsize` feature to cast from the type without this extra bound to the type with it, along with the macro emitting some extra code that causes compile failures if the provided base type does not imply one of the marker traits in question.
