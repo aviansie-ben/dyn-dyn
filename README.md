@@ -26,15 +26,13 @@ impl ExposedTrait for Struct {}
 #[dyn_dyn_impl(ExposedTrait)]
 impl BaseTrait for Struct {}
 
-fn main() {
-    let mut s = Struct;
+let mut s = Struct;
 
-    assert!(dyn_dyn_cast!(BaseTrait => ExposedTrait, &s).is_ok());
-    assert!(dyn_dyn_cast!(mut BaseTrait => ExposedTrait, &mut s).is_ok());
+assert!(dyn_dyn_cast!(BaseTrait => ExposedTrait, &s).is_ok());
+assert!(dyn_dyn_cast!(mut BaseTrait => ExposedTrait, &mut s).is_ok());
 
-    #[cfg(feature = "alloc")]
-    assert!(dyn_dyn_cast!(move BaseTrait => ExposedTrait, Box::new(s)).is_ok());
-}
+#[cfg(feature = "alloc")]
+assert!(dyn_dyn_cast!(move BaseTrait => ExposedTrait, Box::new(s)).is_ok());
 ```
 
 ## Using `dyn-dyn` with auto traits

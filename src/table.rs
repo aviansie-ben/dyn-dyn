@@ -20,7 +20,7 @@ impl AnyDynMetadata {
         //         size. The only valid usage of this *const () is then to transmute it back to DynMetadata<T>. While this definitely makes
         //         assumptions about how the standard library implements DynMetadata (which is unfortunate), we should fail to compile if
         //         that changes rather than invoking UB.
-        unsafe { AnyDynMetadata(mem::transmute(meta)) }
+        unsafe { AnyDynMetadata(mem::transmute::<DynMetadata<T>, *const ()>(meta)) }
     }
 
     /// Downcasts this untyped metadata into typed metadata for a trait object referring to a particular trait.
@@ -31,7 +31,7 @@ impl AnyDynMetadata {
     pub const unsafe fn downcast<T: DynDynCastTarget + ?Sized>(self) -> DynMetadata<T> {
         // SAFETY: Safety invariants for this fn require that this pointer came from transmuting a DynMetadata<T>, so transmuting it back
         //         should be safe.
-        unsafe { mem::transmute(self.0) }
+        unsafe { mem::transmute::<*const (), DynMetadata<T>>(self.0) }
     }
 }
 
