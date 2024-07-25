@@ -77,7 +77,7 @@ pub fn dyn_dyn_impl(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> Token
                 impl #impl_generics __dyn_dyn_DynTable #type_generics #where_clause {
                     pub const __TABLE: [::dyn_dyn::DynDynTableEntry; #num_table_entries] = [
                         #(
-                            ::dyn_dyn::DynDynTableEntry::new::<#self_ty, dyn #convert_tys>()
+                            ::dyn_dyn::DynDynTableEntry::new::<#self_ty, dyn #convert_tys, _>()
                         ),*
                     ];
                 }
