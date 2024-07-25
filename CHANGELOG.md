@@ -1,5 +1,12 @@
 # Changelog
 
+## Version 0.2.0
+
+- Loosened bounds for `UncheckedDowncast` to remove its dependency on `DynDynTarget`
+- Remove the unnecessary `B` generic parameter from `UncheckedDowncast`
+- Fixed to build properly with newer Nightlies where the `effects` feature is being reworked
+- Removed the ability to use marker traits in `dyn_dyn_cast!` since this is no longer sound when combined with the `arbitrary_self_types` feature
+
 ## Version 0.1.2
 
 - Fixed to build properly with newer Nightlies that removed the `const_convert` feature
