@@ -155,6 +155,18 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                 outer_struct,
             } = input_parsed;
 
+            if !tgt_markers.is_empty() {
+                Diagnostic::spanned(
+                    tgt_markers[0].span().unwrap(),
+                    Level::Error,
+                    "casting to traits with extra bounds is not allowed"
+                )
+                .note("this used to be allowed prior to dyn-dyn 0.2, but is liable to cause UB in the future due to https://github.com/rust-lang/rust/issues/127323")
+                .emit();
+
+                return quote!(unreachable!());
+            }
+
             let helper_new = match ty {
                 DynDynCastType::Mut(_) => quote!(new_mut),
                 DynDynCastType::Move(_) => quote!(new_move),

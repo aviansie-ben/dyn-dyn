@@ -45,13 +45,3 @@ fn test_dst_struct_cast() {
             .map_err(|_| ())
     );
 }
-
-#[test]
-fn test_dst_struct_cast_with_markers() {
-    assert_eq!(
-        Ok(1234),
-        dyn_dyn_cast!(Base + Send => Trait + Send [DstStruct<$>], &DstStruct(0, StructB(1234)) as &DstStruct<dyn Base + Send>)
-            .map(|t| t.1.test())
-            .map_err(|_| ())
-    );
-}
