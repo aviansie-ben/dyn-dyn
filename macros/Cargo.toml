@@ -3,7 +3,7 @@ name = "dyn-dyn-macros"
 description = "Procedural macros used by the dyn-dyn crate"
 repository = "https://github.com/aviansie-ben/dyn-dyn"
 license = "MIT OR Apache-2.0"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Benjamin Thomas <ben@benthomas.ca>"]
 edition = "2021"
 
