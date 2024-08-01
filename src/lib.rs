@@ -5,9 +5,6 @@
 #![allow(clippy::needless_borrowed_reference)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![feature(coerce_unsized)]
-#![feature(const_nonnull_new)]
-#![feature(const_option)]
-#![feature(const_trait_impl)]
 #![feature(const_type_id)]
 #![cfg_attr(feature = "dynamic-names", feature(const_type_name))]
 #![feature(doc_auto_cfg)]
@@ -72,14 +69,12 @@ pub use dyn_dyn_macros::dyn_dyn_base;
 ///     dyn_dyn_cast!(move Base => Trait, r)
 /// }
 ///
-/// fn main() {
-///     let mut s = Struct;
+/// let mut s = Struct;
 ///
-///     assert!(downcast(&s).is_ok());
-///     assert!(downcast_mut(&mut s).is_ok());
-///     # #[cfg(feature = "alloc")]
-///     assert!(downcast_box(Box::new(s)).is_ok());
-/// }
+/// assert!(downcast(&s).is_ok());
+/// assert!(downcast_mut(&mut s).is_ok());
+/// # #[cfg(feature = "alloc")]
+/// assert!(downcast_box(Box::new(s)).is_ok());
 /// ```
 pub use dyn_dyn_macros::dyn_dyn_cast;
 
@@ -439,9 +434,8 @@ cfg_if! {
             type DowncastResult<D: ?Sized + 'a> = Arc<D>;
 
             unsafe fn downcast_unchecked<D: ?Sized + Pointee>(self, metadata: <D as Pointee>::Metadata) -> Arc<D> {
-                // SAFETY: 1) NonNull::new_unchecked is fine since the raw pointer of a Box can never be null.
-                //         2) Arc::from_raw is fine since the fat pointer passed in has the same data pointer as what we got from
-                //            Arc::into_raw and the metadata pointer is guaranteed to be valid by this fn's safety invariants.
+                // SAFETY: Arc::from_raw is fine since the fat pointer passed in has the same data pointer as what we got from
+                //         Arc::into_raw and the metadata pointer is guaranteed to be valid by this fn's safety invariants.
                 unsafe {
                     Arc::from_raw(
                         ptr::from_raw_parts(Arc::into_raw(self) as *const (), metadata),
