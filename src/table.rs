@@ -27,7 +27,7 @@ impl AnyDynMetadata {
     ///
     /// # Safety
     ///
-    /// This untyped metadata must have originally been constructed by converting a `DynMetadata<T>`.
+    /// This untyped metadata must have originally been constructed by upcasting a `DynMetadata<T>` via [`AnyDynMetadata::upcast`].
     pub const unsafe fn downcast<T: DynDynCastTarget + ?Sized>(self) -> DynMetadata<T> {
         // SAFETY: Safety invariants for this fn require that this pointer came from transmuting a DynMetadata<T>, so transmuting it back
         //         should be safe.
@@ -108,7 +108,7 @@ impl DynDynTableEntry {
         ptr::metadata(ptr::null::<T>() as *const D)
     }
 
-    #[doc(hidden)]
+    #[doc(hidden)] // public only because it's used by #[dyn_dyn_impl]
     pub const fn new<
         T: Unsize<D>,
         D: ?Sized + Pointee<Metadata = DynMetadata<M>> + 'static,
