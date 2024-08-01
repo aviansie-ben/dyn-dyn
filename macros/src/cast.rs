@@ -54,7 +54,6 @@ struct DynDynCastProcessedInput {
     val: Expr,
     ty: DynDynCastType,
     base_primary_trait: TraitBound,
-    base_markers: Vec<TypeParamBound>,
     tgt_primary_trait: TraitBound,
     tgt_markers: Vec<TypeParamBound>,
     outer_struct: Option<TokenStream>,
@@ -102,7 +101,6 @@ fn process_input(input: &DynDynCastInput) -> Result<DynDynCastProcessedInput, (S
         val: input.expr.clone(),
         ty: input.ty,
         base_primary_trait,
-        base_markers,
         tgt_primary_trait,
         tgt_markers,
         outer_struct: input
@@ -165,7 +163,6 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                 val,
                 ty,
                 base_primary_trait,
-                base_markers,
                 tgt_primary_trait,
                 tgt_markers,
                 outer_struct,
@@ -210,42 +207,6 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
                 }
             }
 
-            let check_markers = if !tgt_markers.is_empty() || !base_markers.is_empty() {
-                let impl_base_markers = replace_placeholder(
-                    outer_struct.clone(),
-                    quote!((impl ?Sized + #base_primary_trait #(+ #base_markers)*)),
-                )
-                .unwrap();
-
-                let impl_tgt_markers = replace_placeholder(
-                    outer_struct.clone(),
-                    quote!((impl ?Sized + #base_primary_trait #(+ #tgt_markers)*)),
-                )
-                .unwrap();
-
-                quote!(
-                    if false {
-                        fn __dyn_dyn_marker_check(
-                            r: &#impl_base_markers
-                        ) -> &#impl_tgt_markers { r }
-
-                        __dyn_dyn_marker_check(::dyn_dyn::internal::DerefHelperEnd::typecheck(&__dyn_dyn_input));
-                    }
-                )
-            } else {
-                quote!()
-            };
-
-            let cast_metadata = if !tgt_markers.is_empty() {
-                quote! {
-                    let __dyn_dyn_metadata = ::dyn_dyn::internal::cast_metadata::<
-                        dyn #tgt_primary_trait, dyn #tgt_primary_trait #(+ #tgt_markers)*
-                    >(__dyn_dyn_metadata, |__dyn_dyn_ptr| __dyn_dyn_ptr as *mut (dyn #tgt_primary_trait #(+ #tgt_markers)*));
-                }
-            } else {
-                quote!()
-            };
-
             let primary_base =
                 replace_placeholder(outer_struct.clone(), quote!((dyn #base_primary_trait)))
                     .unwrap();
@@ -287,20 +248,13 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
             };
 
             quote!((|__dyn_dyn_input| {
-                #check_markers
-
                 let __dyn_dyn_table = ::dyn_dyn::internal::DerefHelperEnd::<#primary_base>::get_dyn_dyn_table(&__dyn_dyn_input);
                 if true {
                     if let ::core::option::Option::Some(__dyn_dyn_metadata) = __dyn_dyn_table.find::<dyn #tgt_primary_trait>() {
-                        #cast_metadata
-
                         // SAFETY:
                         //
                         // By the safety invariants of GetDynDynTable<B>, we know that the returned DynDynTable matches the concrete type of
-                        // the pointee, so attaching it to the pointer is valid. The cast performed by cast_metadata is also known to be
-                        // valid, since check_markers will not compile unless the pointee type of the input implements all of the necessary
-                        // marker traits and the actual metadata cast is performed via use of the "as" operation to cast it using a fake fat
-                        // pointer.
+                        // the pointee, so attaching it to the pointer is valid.
                         //
                         // Additionally, the lifetime of the output is constrained by the result of the other side of this if
                         // statement, where __dyn_dyn_constrain_lifetime is called. By doing this, we ensure that the pointee of the

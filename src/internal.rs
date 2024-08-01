@@ -3,13 +3,10 @@
 //! expansions, but they are not actually part of the public API of this crate and should not be
 //! directly relied upon by external code.
 
-use crate::{
-    DowncastUnchecked, DynDyn, DynDynBase, DynDynCastTarget, DynDynRef, DynDynRefMut, DynDynTable,
-    GetDynDynTable,
-};
+use crate::{DowncastUnchecked, DynDyn, DynDynBase, DynDynRef, DynDynRefMut, DynDynTable};
 use core::marker::{PhantomData, Unsize};
 use core::ops::{Deref, DerefMut};
-use core::ptr::{DynMetadata, NonNull, Pointee};
+use core::ptr::Pointee;
 use stable_deref_trait::StableDeref;
 
 // This special proxy trait is needed for the __dyn_dyn_constrain_lifetime method which is
@@ -67,9 +64,6 @@ pub trait DerefHelperEnd<'a, B: ?Sized + DynDynBase> {
     ) -> <Self::Inner as DowncastUnchecked<'a>>::DowncastResult<D>;
     fn unwrap(self) -> Self::Inner;
     fn into_err(self) -> Self::Err;
-    fn typecheck(&self) -> &<Self::Inner as GetDynDynTable<B>>::DynTarget {
-        panic!("this method is only meant to be used for typechecking");
-    }
 }
 
 pub struct DerefHelper<B: ?Sized + DynDynBase, T>(T, PhantomData<fn(B) -> B>);
@@ -239,14 +233,4 @@ impl<'a, B: ?Sized + DynDynBase, T: DynDyn<'a, B>, E, F: FnOnce(T) -> E> DerefHe
     fn into_err(self) -> Self::Err {
         self.1(self.0)
     }
-}
-
-pub fn cast_metadata<T: ?Sized + DynDynCastTarget, U: ?Sized + DynDynCastTarget>(
-    meta: DynMetadata<T::Root>,
-    f: impl Fn(*mut T) -> *mut U,
-) -> DynMetadata<U::Root> {
-    U::ptr_into_parts(
-        NonNull::new(f(T::ptr_from_parts(NonNull::dangling(), meta).as_ptr())).unwrap(),
-    )
-    .1
 }
