@@ -62,7 +62,7 @@ struct DynDynCastProcessedInput {
 
 #[derive(Debug, Clone, Copy)]
 enum Error {
-    FirstBoundMustBePrimaryTrait,
+    LifetimesNotAllowedInCast,
 }
 
 fn split_trait_bounds(
@@ -71,11 +71,22 @@ fn split_trait_bounds(
     let primary_trait = match input[0] {
         TypeParamBound::Trait(ref bound) => bound.clone(),
         TypeParamBound::Lifetime(_) => {
-            return Err((input[0].span(), Error::FirstBoundMustBePrimaryTrait));
+            return Err((input[0].span(), Error::LifetimesNotAllowedInCast));
         }
     };
 
-    Ok((primary_trait, input.iter().skip(1).cloned().collect()))
+    let marker_traits: Vec<_> = input.iter().skip(1).cloned().collect();
+
+    for bound in marker_traits.iter() {
+        match *bound {
+            TypeParamBound::Trait(_) => {}
+            TypeParamBound::Lifetime(_) => {
+                return Err((bound.span(), Error::LifetimesNotAllowedInCast));
+            }
+        }
+    }
+
+    Ok((primary_trait, marker_traits))
 }
 
 fn process_input(input: &DynDynCastInput) -> Result<DynDynCastProcessedInput, (Span, Error)> {
@@ -315,7 +326,7 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
         }
         Err((span, err)) => {
             let err = match err {
-                Error::FirstBoundMustBePrimaryTrait => "First bound must be the primary trait",
+                Error::LifetimesNotAllowedInCast => "Explicit lifetimes are not allowed in dyn_dyn_cast!",
             };
 
             Diagnostic::spanned(span.unwrap(), Level::Error, err).emit();
