@@ -63,6 +63,7 @@ struct DynDynCastProcessedInput {
 #[derive(Debug, Clone, Copy)]
 enum Error {
     LifetimesNotAllowedInCast,
+    BaseMarkerTraitsNotAllowed,
 }
 
 fn split_trait_bounds(
@@ -91,6 +92,10 @@ fn split_trait_bounds(
 
 fn process_input(input: &DynDynCastInput) -> Result<DynDynCastProcessedInput, (Span, Error)> {
     let (base_primary_trait, base_markers) = split_trait_bounds(&input.base_traits)?;
+    if let Some(base_marker) = base_markers.first() {
+        return Err((base_marker.span(), Error::BaseMarkerTraitsNotAllowed));
+    }
+
     let (tgt_primary_trait, tgt_markers) = split_trait_bounds(&input.target_traits)?;
 
     Ok(DynDynCastProcessedInput {
@@ -325,11 +330,21 @@ pub fn dyn_dyn_cast(input: DynDynCastInput) -> TokenStream {
             }))
         }
         Err((span, err)) => {
-            let err = match err {
-                Error::LifetimesNotAllowedInCast => "Explicit lifetimes are not allowed in dyn_dyn_cast!",
+            let (err, note) = match err {
+                Error::LifetimesNotAllowedInCast => ("Explicit lifetimes are not allowed in dyn_dyn_cast!", None),
+                Error::BaseMarkerTraitsNotAllowed => (
+                    "Marker traits are not allowed on the base trait in a dyn_dyn_cast!",
+                    Some("this used to be allowed prior to dyn-dyn 0.2 to cast to targets with marker traits, but is liable to cause UB in the future due to https://github.com/rust-lang/rust/issues/127323")
+                ),
             };
 
-            Diagnostic::spanned(span.unwrap(), Level::Error, err).emit();
+            let mut d = Diagnostic::spanned(span.unwrap(), Level::Error, err);
+
+            if let Some(note) = note {
+                d = d.note(note);
+            }
+
+            d.emit();
 
             quote!(unreachable!())
         }
