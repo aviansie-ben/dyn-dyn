@@ -3,6 +3,11 @@
 //! expansions, but they are not actually part of the public API of this crate and should not be
 //! directly relied upon by external code.
 
+// Some of the return types here can be a bit long to write out, but that's not easily avoided.
+// They're not really "complex" though, they just need a longer than usual list of generic
+// parameters due to how these structs need to work.
+#![allow(clippy::type_complexity)]
+
 use crate::{DowncastUnchecked, DynDyn, DynDynBase, DynDynRef, DynDynRefMut, DynDynTable};
 use core::marker::{PhantomData, Unsize};
 use core::ops::{Deref, DerefMut};

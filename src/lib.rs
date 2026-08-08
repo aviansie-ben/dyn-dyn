@@ -240,7 +240,7 @@ impl<'a, B: ?Sized + DynDynBase, T: GetDynDynTable<B> + DowncastUnchecked<'a>> D
 // SAFETY: The referent of a shared reference will never change unexpectedly and the table returned matches that returned by dereferencing
 //         it by definition. The DowncastUnchecked implementation is also a simple cast via converting to/from a pointer and so should be
 //         correct.
-unsafe impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> GetDynDynTable<B> for &'a T {
+unsafe impl<B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> GetDynDynTable<B> for &T {
     type DynTarget = T;
 
     fn get_dyn_dyn_table(&self) -> DynDynTable {
@@ -296,7 +296,7 @@ where
 // SAFETY: The referent of a mutable reference will never change unexpectedly and the table is returned by deferring to &T's implementation
 //         and so should be correct. The DowncastUnchecked implementation is also a simple cast via converting to/from a pointer and so
 //         should also be correct.
-unsafe impl<'a, B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> GetDynDynTable<B> for &'a mut T {
+unsafe impl<B: ?Sized + DynDynBase, T: ?Sized + Unsize<B>> GetDynDynTable<B> for &mut T {
     type DynTarget = T;
 
     fn get_dyn_dyn_table(&self) -> DynDynTable {

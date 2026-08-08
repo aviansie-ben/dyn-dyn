@@ -6,7 +6,9 @@ use syn::spanned::Spanned;
 use syn::{GenericParam, ItemImpl, Token, Type};
 
 pub fn dyn_dyn_impl(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> TokenStream {
-    if input.trait_.is_none() {
+    let trait_ = if let Some(ref trait_) = input.trait_ {
+        trait_.clone()
+    } else {
         Diagnostic::spanned(
             proc_macro::Span::call_site(),
             Level::Error,
@@ -14,7 +16,9 @@ pub fn dyn_dyn_impl(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> Token
         )
         .emit();
         return input.to_token_stream();
-    } else if input.trait_.as_ref().unwrap().0.is_some() {
+    };
+
+    if trait_.0.is_some() {
         Diagnostic::spanned(
             proc_macro::Span::call_site(),
             Level::Error,
@@ -25,7 +29,7 @@ pub fn dyn_dyn_impl(args: Punctuated<Type, Token![,]>, input: ItemImpl) -> Token
     }
 
     let self_ty = &input.self_ty;
-    let trait_ = input.trait_.clone().unwrap().1;
+    let trait_ = trait_.1;
     let generics = &input.generics;
     let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
 
