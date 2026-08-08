@@ -5,9 +5,8 @@
 #![allow(clippy::needless_borrowed_reference)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![feature(coerce_unsized)]
-#![feature(const_type_id)]
 #![cfg_attr(feature = "dynamic-names", feature(const_type_name))]
-#![feature(doc_auto_cfg)]
+#![feature(doc_cfg)]
 #![feature(ptr_metadata)]
 #![feature(unsize)]
 
