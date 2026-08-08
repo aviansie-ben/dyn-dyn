@@ -1,5 +1,12 @@
 # Changelog
 
+## Version 0.2.1
+
+- Fixed to build properly with newer Nightlies that replace the `doc_auto_cfg` feature with `doc_cfg`
+- Fixed an issue where `dyn-dyn` could select an incompatible version of the internal `dyn-dyn-macros` crate
+- Removed support for marker traits on the base trait of a `dyn_dyn_cast!` call
+- Removed support for explicit lifetimes in `dyn_dyn_cast!` since they're not useful and don't always work correctly
+
 ## Version 0.2.0
 
 - Loosened bounds for `UncheckedDowncast` to remove its dependency on `DynDynTarget`
